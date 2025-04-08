@@ -74,69 +74,73 @@ st.dataframe(grouped.style.format({
     subset=['Revenue Conversion %', 'Orders Conversion %', 'GM Conversion %']
 ), use_container_width=True)
 
-# ========== Revenue Comparison ==========
+# Plot settings
+def bar_chart_with_labels(df, x_col, y_cols, colors, title, y_title):
+    fig = px.bar(
+        df,
+        x=x_col,
+        y=y_cols,
+        barmode='group',
+        color_discrete_sequence=colors
+    )
+    # Add text labels
+    for i, col in enumerate(y_cols):
+        fig.add_scatter(
+            x=df[x_col],
+            y=df[col],
+            mode='text',
+            text=df[col].apply(lambda x: f'{x:,.0f}'),
+            textposition='outside',
+            name=f"{col} Label",
+            showlegend=False
+        )
+    fig.update_layout(
+        xaxis_title=x_col,
+        yaxis_title=y_title,
+        xaxis_tickangle=45,
+        plot_bgcolor='rgba(0,0,0,0)',
+        paper_bgcolor='white',
+        bargap=0.25,
+        title=title,
+        title_font=dict(size=18),
+        legend=dict(font=dict(size=12)),
+        font=dict(size=12)
+    )
+    return fig
+
+# Revenue Chart
 st.subheader(f"💰 Revenue Comparison by {group_by}")
-fig_rev = px.bar(
+fig_rev = bar_chart_with_labels(
     grouped,
-    x=group_by,
-    y=['Committed Revenue', 'Achieved Revenue'],
-    barmode='group',
-    text_auto='.2s',
-    color_discrete_sequence=['#1f77b4', '#2ca02c'],
-    height=500
-)
-fig_rev.update_layout(
-    xaxis_title=group_by,
-    yaxis_title="Revenue (USD)",
-    xaxis_tickangle=45,
-    plot_bgcolor='rgba(0,0,0,0)',
-    paper_bgcolor='white',
-    title_font=dict(size=16),
-    legend=dict(font=dict(size=12))
+    group_by,
+    ['Committed Revenue', 'Achieved Revenue'],
+    ['#1f77b4', '#2ca02c'],
+    f"Revenue: Committed vs Achieved by {group_by}",
+    "Revenue (USD)"
 )
 st.plotly_chart(fig_rev, use_container_width=True)
 
-# ========== Orders Comparison ==========
+# Orders Chart
 st.subheader(f"📦 Orders Comparison by {group_by}")
-fig_orders = px.bar(
+fig_orders = bar_chart_with_labels(
     grouped,
-    x=group_by,
-    y=['Committed Orders', 'Achieved Orders'],
-    barmode='group',
-    text_auto=True,
-    color_discrete_sequence=['#ff7f0e', '#9467bd'],
-    height=500
-)
-fig_orders.update_layout(
-    xaxis_title=group_by,
-    yaxis_title="Orders (Count)",
-    xaxis_tickangle=45,
-    plot_bgcolor='rgba(0,0,0,0)',
-    paper_bgcolor='white',
-    title_font=dict(size=16),
-    legend=dict(font=dict(size=12))
+    group_by,
+    ['Committed Orders', 'Achieved Orders'],
+    ['#ff7f0e', '#9467bd'],
+    f"Orders: Committed vs Achieved by {group_by}",
+    "Orders (Count)"
 )
 st.plotly_chart(fig_orders, use_container_width=True)
 
-# ========== Gross Margin Comparison ==========
+# Gross Margin Chart
 st.subheader(f"📈 Gross Margin Comparison by {group_by}")
-fig_gm = px.bar(
+fig_gm = bar_chart_with_labels(
     grouped,
-    x=group_by,
-    y=['Committed Gross Margin', 'Achieved Gross Margin'],
-    barmode='group',
-    text_auto='.2s',
-    color_discrete_sequence=['#d62728', '#17becf'],
-    height=500
-)
-fig_gm.update_layout(
-    xaxis_title=group_by,
-    yaxis_title="Gross Margin (USD)",
-    xaxis_tickangle=45,
-    plot_bgcolor='rgba(0,0,0,0)',
-    paper_bgcolor='white',
-    title_font=dict(size=16),
-    legend=dict(font=dict(size=12))
+    group_by,
+    ['Committed Gross Margin', 'Achieved Gross Margin'],
+    ['#d62728', '#17becf'],
+    f"Gross Margin: Committed vs Achieved by {group_by}",
+    "Gross Margin (USD)"
 )
 st.plotly_chart(fig_gm, use_container_width=True)
 
