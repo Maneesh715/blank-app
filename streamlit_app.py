@@ -58,9 +58,6 @@ if group_by == 'Month-Year':
 # Show table
 st.dataframe(grouped)
 
-# Chart type toggle
-chart_type = st.radio("📊 Select Chart Type", ['Bar Chart', 'Line Chart'], horizontal=True)
-
 # =================== Revenue Chart ===================
 st.subheader(f"📈 {group_by}-wise Revenue Comparison")
 
