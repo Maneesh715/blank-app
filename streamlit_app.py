@@ -49,9 +49,11 @@ agg_metrics = {
 # Perform aggregation
 grouped = filtered_df.groupby(group_by).agg(agg_metrics).reset_index()
 
-# Sort by Month-Year if selected
+# Sort and convert 'Month-Year' to string for clean x-axis labels
 if group_by == 'Month-Year':
     grouped = grouped.sort_values(by='Month-Year')
+    grouped['Month-Year'] = grouped['Month-Year'].dt.strftime('%b-%Y')  # Convert to string for x-axis
+
 
 # Display table
 st.dataframe(grouped)
