@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 
 # Load data from Google Sheets (Replace with your CSV link)
-csv_url = "https://docs.google.com/spreadsheets/d/e/....../pub?output=csv"
-df = pd.read_csv(csv_url)
+excel_url = "https://docs.google.com/spreadsheets/d/1VGd-4Ycj8mz8ZvDV2chLt4bG8DMjQ64fSLADkmXLsPo/edit?output=xlsx"
+df = pd.read_excel(excel_url)
 
 # Convert 'Month-Year' to datetime for sorting
 df['Month-Year'] = pd.to_datetime(df['Month-Year'], format='%b-%Y')
