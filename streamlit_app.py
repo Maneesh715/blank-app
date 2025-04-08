@@ -49,7 +49,6 @@ grouped = filtered_df.groupby(group_by).agg(agg_metrics).reset_index()
 
 # Sort Month-Year if selected
 if group_by == 'Month-Year':
-    grouped[group_by] = pd.to_datetime(grouped[group_by], format='%b-%Y')
     grouped = grouped.sort_values(by=grouped[group_by])
     grouped[group_by] = grouped[group_by].dt.strftime('%b-%Y')
 
