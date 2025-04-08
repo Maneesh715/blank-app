@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 
 # Load data from Google Sheets (Replace with your CSV link)
 import pandas as pd
@@ -58,10 +59,51 @@ if group_by == 'Month-Year':
 # Display table
 st.dataframe(grouped)
 
-# Optional: Plot Charts
-st.subheader(f"📈 {group_by}-wise Revenue Comparison")
-st.bar_chart(grouped.set_index(group_by)[['Committed Revenue', 'Achieved Revenue']])
+# Sort again to ensure x-axis is in calendar order
+if group_by == 'Month-Year':
+    # Convert string Month-Year back to datetime for correct plot order
+    grouped['Month-Year'] = pd.to_datetime(grouped['Month-Year'], format='%b-%Y')
+    grouped = grouped.sort_values(by='Month-Year')
+    grouped[group_by] = grouped['Month-Year'].dt.strftime('%b-%Y')  # Format for display
 
+# 📈 Revenue Comparison
+st.subheader(f"📈 {group_by}-wise Revenue Comparison")
+fig_rev = px.bar(
+    grouped,
+    x=group_by,
+    y=['Committed Revenue', 'Achieved Revenue'],
+    barmode='group',
+    title='Revenue Comparison',
+    color_discrete_sequence=['#1f77b4', '#2ca02c']
+)
+fig_rev.update_layout(
+    xaxis_title=group_by,
+    yaxis_title="Revenue",
+    xaxis_tickangle=45,
+    plot_bgcolor='rgba(0,0,0,0)',
+    paper_bgcolor='white',
+    font=dict(size=12)
+)
+st.plotly_chart(fig_rev, use_container_width=True)
+
+# 📈 Orders Comparison
 st.subheader(f"📈 {group_by}-wise Orders Comparison")
-st.bar_chart(grouped.set_index(group_by)[['Committed Orders', 'Achieved Orders']])
+fig_orders = px.bar(
+    grouped,
+    x=group_by,
+    y=['Committed Orders', 'Achieved Orders'],
+    barmode='group',
+    title='Orders Comparison',
+    color_discrete_sequence=['#ff7f0e', '#9467bd']
+)
+fig_orders.update_layout(
+    xaxis_title=group_by,
+    yaxis_title="Orders",
+    xaxis_tickangle=45,
+    plot_bgcolor='rgba(0,0,0,0)',
+    paper_bgcolor='white',
+    font=dict(size=12)
+)
+st.plotly_chart(fig_orders, use_container_width=True)
+
 
