@@ -3,7 +3,6 @@ import pandas as pd
 import plotly.express as px
 
 # Load data from Google Sheets (Replace with your CSV link)
-import pandas as pd
 excel_url = "https://docs.google.com/spreadsheets/d/1VGd-4Ycj8mz8ZvDV2chLt4bG8DMjQ64fSLADkmXLsPo/export?format=xlsx"
 df = pd.read_excel(excel_url, engine='openpyxl')
 
@@ -50,26 +49,24 @@ agg_metrics = {
 # Perform aggregation
 grouped = filtered_df.groupby(group_by).agg(agg_metrics).reset_index()
 
-# Sort and convert 'Month-Year' to string for clean x-axis labels
+# Sort and format 'Month-Year' for x-axis
 if group_by == 'Month-Year':
     grouped = grouped.sort_values(by='Month-Year')
-    grouped['Month-Year'] = grouped['Month-Year'].dt.strftime('%b-%Y')  # Convert to string for x-axis
-
+    grouped['Month-Year'] = grouped['Month-Year'].dt.strftime('%b-%Y')
 
 # Display table
 st.dataframe(grouped)
 
-# Sort again to ensure x-axis is in calendar order
+# Re-convert Month-Year to datetime for correct x-axis order
 if group_by == 'Month-Year':
-    # Convert string Month-Year back to datetime for correct plot order
     grouped['Month-Year'] = pd.to_datetime(grouped['Month-Year'], format='%b-%Y')
     grouped = grouped.sort_values(by='Month-Year')
-    grouped[group_by] = grouped['Month-Year'].dt.strftime('%b-%Y')  # Format for display
+    grouped[group_by] = grouped['Month-Year'].dt.strftime('%b-%Y')
 
-# Chart Type Toggle
+# Chart type toggle
 chart_type = st.radio("📊 Select Chart Type", ['Bar Chart', 'Line Chart'], horizontal=True)
 
-# 📈 Revenue Comparison
+# ========================== Revenue Chart ==========================
 st.subheader(f"📈 {group_by}-wise Revenue Comparison")
 
 if chart_type == 'Bar Chart':
@@ -98,14 +95,25 @@ fig_rev.update_layout(
     xaxis_title=group_by,
     yaxis_title="Revenue",
     xaxis_tickangle=60,
-    xaxis=dict(tickfont=dict(size=11), automargin=True),
+    xaxis=dict(
+        tickfont=dict(size=12, color='#333333'),
+        titlefont=dict(size=14, color='#333333'),
+        automargin=True
+    ),
+    yaxis=dict(
+        tickfont=dict(size=12, color='#333333'),
+        titlefont=dict(size=14, color='#333333')
+    ),
+    title_font=dict(size=16, color='#333333'),
+    legend=dict(font=dict(color='#333333')),
+    font=dict(color='#333333'),
     plot_bgcolor='rgba(0,0,0,0)',
-    paper_bgcolor='white',
-    font=dict(size=12)
+    paper_bgcolor='white'
 )
+fig_rev.update_traces(textfont=dict(color='#333333'))
 st.plotly_chart(fig_rev, use_container_width=True)
 
-# 📈 Orders Comparison
+# ========================== Orders Chart ==========================
 st.subheader(f"📈 {group_by}-wise Orders Comparison")
 
 if chart_type == 'Bar Chart':
@@ -134,9 +142,21 @@ fig_orders.update_layout(
     xaxis_title=group_by,
     yaxis_title="Orders",
     xaxis_tickangle=60,
-    xaxis=dict(tickfont=dict(size=11), automargin=True),
+    xaxis=dict(
+        tickfont=dict(size=12, color='#333333'),
+        titlefont=dict(size=14, color='#333333'),
+        automargin=True
+    ),
+    yaxis=dict(
+        tickfont=dict(size=12, color='#333333'),
+        titlefont=dict(size=14, color='#333333')
+    ),
+    title_font=dict(size=16, color='#333333'),
+    legend=dict(font=dict(color='#333333')),
+    font=dict(color='#333333'),
     plot_bgcolor='rgba(0,0,0,0)',
-    paper_bgcolor='white',
-    font=dict(size=12)
+    paper_bgcolor='white'
 )
+fig_orders.update_traces(textfont=dict(color='#333333'))
 st.plotly_chart(fig_orders, use_container_width=True)
+
