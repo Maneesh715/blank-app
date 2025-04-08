@@ -11,7 +11,7 @@ df['Month-Year'] = pd.to_datetime(df['Month-Year'], format='%b-%Y')
 
 # Sidebar filters
 st.sidebar.header("🔍 Filter Data")
-selected_months = st.sidebar.multiselect("Select Month-Year", sorted(df['Month-Year'].dt.strftime('%b-%Y').unique()), default=None)
+selected_months = st.sidebar.multiselect("Select Month-Year", sorted(df['Month-Year'].dt.strftime('%b-%Y').unique()))
 selected_deal_managers = st.sidebar.multiselect("Select Deal Manager", df['Deal Manager'].unique())
 selected_customers = st.sidebar.multiselect("Select Customer", df['Customer'].unique())
 selected_countries = st.sidebar.multiselect("Select Country", df['Country'].unique())
@@ -19,7 +19,6 @@ selected_plants = st.sidebar.multiselect("Select Plant Type", df['Plant Type'].u
 
 # Apply filters
 filtered_df = df.copy()
-
 if selected_months:
     filtered_df = filtered_df[filtered_df['Month-Year'].dt.strftime('%b-%Y').isin(selected_months)]
 if selected_deal_managers:
@@ -31,12 +30,13 @@ if selected_countries:
 if selected_plants:
     filtered_df = filtered_df[filtered_df['Plant Type'].isin(selected_plants)]
 
+# Title
 st.title("📊 Sales Performance Dashboard")
 
 # Grouping options
 group_by = st.selectbox("Group By", ['Month-Year', 'Deal Manager', 'Customer', 'Country', 'Plant Type'])
 
-# Aggregate Metrics
+# Aggregation
 agg_metrics = {
     'Committed Orders': 'sum',
     'Achieved Orders': 'sum',
@@ -45,28 +45,23 @@ agg_metrics = {
     'Committed Gross Margin': 'sum',
     'Achieved Gross Margin': 'sum'
 }
-
-# Perform aggregation
 grouped = filtered_df.groupby(group_by).agg(agg_metrics).reset_index()
 
-# Sort and format 'Month-Year' for x-axis
+# Format Month-Year if needed
 if group_by == 'Month-Year':
     grouped = grouped.sort_values(by='Month-Year')
     grouped['Month-Year'] = grouped['Month-Year'].dt.strftime('%b-%Y')
-
-# Display table
-st.dataframe(grouped)
-
-# Re-convert Month-Year to datetime for correct x-axis order
-if group_by == 'Month-Year':
     grouped['Month-Year'] = pd.to_datetime(grouped['Month-Year'], format='%b-%Y')
     grouped = grouped.sort_values(by='Month-Year')
     grouped[group_by] = grouped['Month-Year'].dt.strftime('%b-%Y')
 
+# Show table
+st.dataframe(grouped)
+
 # Chart type toggle
 chart_type = st.radio("📊 Select Chart Type", ['Bar Chart', 'Line Chart'], horizontal=True)
 
-# ========================== Revenue Chart ==========================
+# =================== Revenue Chart ===================
 st.subheader(f"📈 {group_by}-wise Revenue Comparison")
 
 if chart_type == 'Bar Chart':
@@ -95,25 +90,16 @@ fig_rev.update_layout(
     xaxis_title=group_by,
     yaxis_title="Revenue",
     xaxis_tickangle=60,
-    xaxis=dict(
-        tickfont=dict(size=12, color='#333333'),
-        titlefont=dict(size=14, color='#333333'),
-        automargin=True
-    ),
-    yaxis=dict(
-        tickfont=dict(size=12, color='#333333'),
-        titlefont=dict(size=14, color='#333333')
-    ),
-    title_font=dict(size=16, color='#333333'),
-    legend=dict(font=dict(color='#333333')),
-    font=dict(color='#333333'),
+    xaxis=dict(tickfont=dict(size=12), titlefont=dict(size=14)),
+    yaxis=dict(tickfont=dict(size=12), titlefont=dict(size=14)),
+    title_font=dict(size=16),
+    legend=dict(font=dict(size=12)),
     plot_bgcolor='rgba(0,0,0,0)',
     paper_bgcolor='white'
 )
-fig_rev.update_traces(textfont=dict(color='#333333'))
 st.plotly_chart(fig_rev, use_container_width=True)
 
-# ========================== Orders Chart ==========================
+# =================== Orders Chart ===================
 st.subheader(f"📈 {group_by}-wise Orders Comparison")
 
 if chart_type == 'Bar Chart':
@@ -142,21 +128,11 @@ fig_orders.update_layout(
     xaxis_title=group_by,
     yaxis_title="Orders",
     xaxis_tickangle=60,
-    xaxis=dict(
-        tickfont=dict(size=12, color='#333333'),
-        titlefont=dict(size=14, color='#333333'),
-        automargin=True
-    ),
-    yaxis=dict(
-        tickfont=dict(size=12, color='#333333'),
-        titlefont=dict(size=14, color='#333333')
-    ),
-    title_font=dict(size=16, color='#333333'),
-    legend=dict(font=dict(color='#333333')),
-    font=dict(color='#333333'),
+    xaxis=dict(tickfont=dict(size=12), titlefont=dict(size=14)),
+    yaxis=dict(tickfont=dict(size=12), titlefont=dict(size=14)),
+    title_font=dict(size=16),
+    legend=dict(font=dict(size=12)),
     plot_bgcolor='rgba(0,0,0,0)',
     paper_bgcolor='white'
 )
-fig_orders.update_traces(textfont=dict(color='#333333'))
 st.plotly_chart(fig_orders, use_container_width=True)
-
