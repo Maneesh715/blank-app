@@ -66,20 +66,39 @@ if group_by == 'Month-Year':
     grouped = grouped.sort_values(by='Month-Year')
     grouped[group_by] = grouped['Month-Year'].dt.strftime('%b-%Y')  # Format for display
 
+# Chart Type Toggle
+chart_type = st.radio("📊 Select Chart Type", ['Bar Chart', 'Line Chart'], horizontal=True)
+
 # 📈 Revenue Comparison
 st.subheader(f"📈 {group_by}-wise Revenue Comparison")
-fig_rev = px.bar(
-    grouped,
-    x=group_by,
-    y=['Committed Revenue', 'Achieved Revenue'],
-    barmode='group',
-    title='Revenue Comparison',
-    color_discrete_sequence=['#1f77b4', '#2ca02c']
-)
+
+if chart_type == 'Bar Chart':
+    fig_rev = px.bar(
+        grouped,
+        x=group_by,
+        y=['Committed Revenue', 'Achieved Revenue'],
+        barmode='group',
+        title='Revenue Comparison',
+        color_discrete_sequence=['#1f77b4', '#2ca02c'],
+        height=500,
+        text_auto=True
+    )
+else:
+    fig_rev = px.line(
+        grouped,
+        x=group_by,
+        y=['Committed Revenue', 'Achieved Revenue'],
+        title='Revenue Comparison',
+        markers=True,
+        color_discrete_sequence=['#1f77b4', '#2ca02c'],
+        height=500
+    )
+
 fig_rev.update_layout(
     xaxis_title=group_by,
     yaxis_title="Revenue",
-    xaxis_tickangle=45,
+    xaxis_tickangle=60,
+    xaxis=dict(tickfont=dict(size=11), automargin=True),
     plot_bgcolor='rgba(0,0,0,0)',
     paper_bgcolor='white',
     font=dict(size=12)
@@ -88,22 +107,36 @@ st.plotly_chart(fig_rev, use_container_width=True)
 
 # 📈 Orders Comparison
 st.subheader(f"📈 {group_by}-wise Orders Comparison")
-fig_orders = px.bar(
-    grouped,
-    x=group_by,
-    y=['Committed Orders', 'Achieved Orders'],
-    barmode='group',
-    title='Orders Comparison',
-    color_discrete_sequence=['#ff7f0e', '#9467bd']
-)
+
+if chart_type == 'Bar Chart':
+    fig_orders = px.bar(
+        grouped,
+        x=group_by,
+        y=['Committed Orders', 'Achieved Orders'],
+        barmode='group',
+        title='Orders Comparison',
+        color_discrete_sequence=['#ff7f0e', '#9467bd'],
+        height=500,
+        text_auto=True
+    )
+else:
+    fig_orders = px.line(
+        grouped,
+        x=group_by,
+        y=['Committed Orders', 'Achieved Orders'],
+        title='Orders Comparison',
+        markers=True,
+        color_discrete_sequence=['#ff7f0e', '#9467bd'],
+        height=500
+    )
+
 fig_orders.update_layout(
     xaxis_title=group_by,
     yaxis_title="Orders",
-    xaxis_tickangle=45,
+    xaxis_tickangle=60,
+    xaxis=dict(tickfont=dict(size=11), automargin=True),
     plot_bgcolor='rgba(0,0,0,0)',
     paper_bgcolor='white',
     font=dict(size=12)
 )
 st.plotly_chart(fig_orders, use_container_width=True)
-
-
