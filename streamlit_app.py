@@ -50,7 +50,7 @@ grouped = filtered_df.groupby(group_by).agg(agg_metrics).reset_index()
 # Sort Month-Year if selected
 if group_by == 'Month-Year':
     grouped[group_by] = pd.to_datetime(grouped[group_by], format='%b-%Y')
-    grouped = grouped.sort_values(by=group_by)
+    grouped = grouped.sort_values(by=grouped[group_by])
     grouped[group_by] = grouped[group_by].dt.strftime('%b-%Y')
 
 # Conversion Rate Calculations
@@ -83,7 +83,6 @@ def bar_chart_with_labels(df, x_col, y_cols, colors, title, y_title):
         barmode='group',
         color_discrete_sequence=colors
     )
-    # Add text labels
     for i, col in enumerate(y_cols):
         fig.add_scatter(
             x=df[x_col],
@@ -109,38 +108,47 @@ def bar_chart_with_labels(df, x_col, y_cols, colors, title, y_title):
     return fig
 
 # Revenue Chart
-st.subheader(f"💰 Revenue Comparison by {group_by}")
-fig_rev = bar_chart_with_labels(
-    grouped,
-    group_by,
-    ['Committed Revenue', 'Achieved Revenue'],
-    ['#1f77b4', '#2ca02c'],
-    f"Revenue: Committed vs Achieved by {group_by}",
-    "Revenue (USD)"
-)
-st.plotly_chart(fig_rev, use_container_width=True)
+if not grouped[['Committed Revenue', 'Achieved Revenue']].isnull().all().all() and not grouped.empty:
+    st.subheader(f"💰 Revenue Comparison by {group_by}")
+    fig_rev = bar_chart_with_labels(
+        grouped,
+        group_by,
+        ['Committed Revenue', 'Achieved Revenue'],
+        ['#1f77b4', '#2ca02c'],
+        f"Revenue: Committed vs Achieved by {group_by}",
+        "Revenue (USD)"
+    )
+    st.plotly_chart(fig_rev, use_container_width=True)
+else:
+    st.warning("⚠️ No revenue data available for the selected filters.")
 
 # Orders Chart
-st.subheader(f"📦 Orders Comparison by {group_by}")
-fig_orders = bar_chart_with_labels(
-    grouped,
-    group_by,
-    ['Committed Orders', 'Achieved Orders'],
-    ['#ff7f0e', '#9467bd'],
-    f"Orders: Committed vs Achieved by {group_by}",
-    "Orders (Count)"
-)
-st.plotly_chart(fig_orders, use_container_width=True)
+if not grouped[['Committed Orders', 'Achieved Orders']].isnull().all().all() and not grouped.empty:
+    st.subheader(f"📦 Orders Comparison by {group_by}")
+    fig_orders = bar_chart_with_labels(
+        grouped,
+        group_by,
+        ['Committed Orders', 'Achieved Orders'],
+        ['#ff7f0e', '#9467bd'],
+        f"Orders: Committed vs Achieved by {group_by}",
+        "Orders (Count)"
+    )
+    st.plotly_chart(fig_orders, use_container_width=True)
+else:
+    st.warning("⚠️ No orders data available for the selected filters.")
 
 # Gross Margin Chart
-st.subheader(f"📈 Gross Margin Comparison by {group_by}")
-fig_gm = bar_chart_with_labels(
-    grouped,
-    group_by,
-    ['Committed Gross Margin', 'Achieved Gross Margin'],
-    ['#d62728', '#17becf'],
-    f"Gross Margin: Committed vs Achieved by {group_by}",
-    "Gross Margin (USD)"
-)
-st.plotly_chart(fig_gm, use_container_width=True)
+if not grouped[['Committed Gross Margin', 'Achieved Gross Margin']].isnull().all().all() and not grouped.empty:
+    st.subheader(f"📈 Gross Margin Comparison by {group_by}")
+    fig_gm = bar_chart_with_labels(
+        grouped,
+        group_by,
+        ['Committed Gross Margin', 'Achieved Gross Margin'],
+        ['#d62728', '#17becf'],
+        f"Gross Margin: Committed vs Achieved by {group_by}",
+        "Gross Margin (USD)"
+    )
+    st.plotly_chart(fig_gm, use_container_width=True)
+else:
+    st.warning("⚠️ No gross margin data available for the selected filters.")
 
