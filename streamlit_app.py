@@ -1,16 +1,10 @@
+# app.py
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 from io import BytesIO
 
 st.set_page_config(page_title="Sales Dashboard", layout="wide")
-
-# ====================
-# 🚪 Authentication
-# ====================
-if st.session_state.get("authentication_status") != True:
-    st.error("🔒 Please log in to access the dashboard.")
-    st.stop()
 
 # ====================
 # 📥 Data Loading
@@ -34,7 +28,6 @@ def safe_divide(numerator, denominator):
 # 🎛 Sidebar Filters
 # ====================
 st.sidebar.header("🔍 Filter Data")
-
 selected_months = st.sidebar.multiselect("📅 Select Month-Year", sorted(df['Month-Year'].dt.strftime('%b-%Y').unique()))
 selected_deal_managers = st.sidebar.multiselect("👨‍💼 Deal Manager", df['Deal Manager'].unique())
 selected_customers = st.sidebar.multiselect("🏢 Customer", df['Customer'].unique())
@@ -116,7 +109,6 @@ def convert_df_to_excel(df):
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         df.to_excel(writer, index=False, sheet_name='Dashboard')
-        writer.close()
     return output.getvalue()
 
 excel_data = convert_df_to_excel(grouped)
