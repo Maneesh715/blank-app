@@ -4,7 +4,17 @@ import pandas as pd
 import plotly.express as px
 from io import BytesIO
 
-st.set_page_config(page_title="Sales Dashboard", layout="wide")
+# 1. Set page title and layout
+st.set_page_config(page_title="⚙️ IndustroDash", layout="wide", page_icon="📊")
+
+# 2. Load Logo and Add Header
+col1, col2 = st.columns([0.1, 0.9])
+with col1:
+    st.image("https://your-company-logo-url.com/logo.png", width=60)  # Replace with real logo URL
+with col2:
+    st.title("IndustroDash — Global Sales & Sourcing Dashboard")
+
+st.markdown("---")
 
 @st.cache_data(ttl=3600)
 def load_data():
@@ -18,13 +28,13 @@ df = load_data()
 def safe_divide(numerator, denominator):
     return (numerator / denominator) * 100 if denominator else 0
 
-# Sidebar Filters
+# 3. Sidebar with Filters
 st.sidebar.header("🔍 Filter Data")
 selected_months = st.sidebar.multiselect("📅 Select Month-Year", sorted(df['Month-Year'].dt.strftime('%b-%Y').unique()))
 selected_deal_managers = st.sidebar.multiselect("👨‍💼 Deal Manager", df['Deal Manager'].unique())
 selected_customers = st.sidebar.multiselect("🏢 Customer", df['Customer'].unique())
 selected_countries = st.sidebar.multiselect("🌍 Country", df['Country'].unique())
-selected_plants = st.sidebar.multiselect("🏭 Plant Type", df['Plant Type'].unique())
+selected_plants = st.sidebar.multiselect("🏣 Plant Type", df['Plant Type'].unique())
 
 filtered_df = df.copy()
 if selected_months:
@@ -38,16 +48,14 @@ if selected_countries:
 if selected_plants:
     filtered_df = filtered_df[filtered_df['Plant Type'].isin(selected_plants)]
 
-# KPI Summary
-st.title("📊 Sales Performance Dashboard")
-st.markdown("Use the filters in the sidebar to drill down performance by time, team, or market.")
-
+# 4. Summary KPIs
+st.subheader("📊 Performance Summary")
 kpi1, kpi2, kpi3 = st.columns(3)
 kpi1.metric("💰 Total Achieved Revenue", f"${filtered_df['Achieved Revenue'].sum():,.0f}")
 kpi2.metric("📦 Total Achieved Orders", f"{filtered_df['Achieved Orders'].sum():,.0f}")
 kpi3.metric("📈 Achieved Gross Margin", f"${filtered_df['Achieved Gross Margin'].sum():,.0f}")
 
-# Grouping
+# 5. Grouped Aggregation
 group_by = st.selectbox("📁 Group Data By", ['Month-Year', 'Deal Manager', 'Customer', 'Country', 'Plant Type'])
 
 agg = {
@@ -69,8 +77,8 @@ grouped['Revenue Conversion %'] = grouped.apply(lambda x: safe_divide(x['Achieve
 grouped['Orders Conversion %'] = grouped.apply(lambda x: safe_divide(x['Achieved Orders'], x['Committed Orders']), axis=1)
 grouped['GM Conversion %'] = grouped.apply(lambda x: safe_divide(x['Achieved Gross Margin'], x['Committed Gross Margin']), axis=1)
 
-# Show Table
-st.subheader(f"🧾 Performance Table by {group_by}")
+# 6. Table Display
+st.subheader(f"📟 Detailed Performance by {group_by}")
 styled = grouped.style.format({
     'Committed Revenue': '{:,.0f}',
     'Achieved Revenue': '{:,.0f}',
@@ -87,7 +95,7 @@ styled = grouped.style.format({
 )
 st.dataframe(styled, use_container_width=True)
 
-# Download Excel
+# 7. Download Excel Option
 def convert_df_to_excel(df):
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
@@ -98,37 +106,34 @@ excel_data = convert_df_to_excel(grouped)
 st.download_button(
     label="⬇️ Download Table as Excel",
     data=excel_data,
-    file_name="sales_dashboard.xlsx",
+    file_name="industro_sales_dashboard.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
 
-# Plotting
+# 8. Custom Plot Function with Branded Colors
 def plot_chart(title, x, y, df, colors, ylabel):
-    try:
-        fig = px.bar(df, x=x, y=y, barmode="group", text_auto='.2s', color_discrete_sequence=colors)
-        fig.update_layout(
-            title=title,
-            xaxis_title=x,
-            yaxis_title=ylabel,
-            xaxis_tickangle=45,
-            plot_bgcolor='#1e1e1e',
-            paper_bgcolor='#1e1e1e',
-            font=dict(color='white'),
-            title_font=dict(size=18, color='white'),
-            legend=dict(font=dict(size=12, color='white')),
-            xaxis=dict(color='white', gridcolor='gray'),
-            yaxis=dict(color='white', gridcolor='gray')
-        )
-        st.plotly_chart(fig, use_container_width=True)
-    except Exception as e:
-        st.warning(f"⚠️ Could not render chart: {title}. Reason: {e}")
+    fig = px.bar(df, x=x, y=y, barmode="group", text_auto='.2s', color_discrete_sequence=colors)
+    fig.update_layout(
+        title=title,
+        xaxis_title=x,
+        yaxis_title=ylabel,
+        xaxis_tickangle=45,
+        plot_bgcolor='#1e1e1e',
+        paper_bgcolor='#1e1e1e',
+        font=dict(color='white'),
+        title_font=dict(size=18, color='white'),
+        legend=dict(font=dict(size=12, color='white')),
+        xaxis=dict(color='white', gridcolor='gray'),
+        yaxis=dict(color='white', gridcolor='gray')
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
-# Charts
+# 9. Branded Graph Colors
 st.subheader(f"💰 Revenue Comparison by {group_by}")
-plot_chart("Revenue Comparison", group_by, ['Committed Revenue', 'Achieved Revenue'], grouped, ['#1f77b4', '#2ca02c'], "Revenue (USD)")
+plot_chart("Revenue Comparison", group_by, ['Committed Revenue', 'Achieved Revenue'], grouped, ['#005B96', '#FFC20E'], "Revenue (USD)")
 
 st.subheader(f"📦 Orders Comparison by {group_by}")
-plot_chart("Orders Comparison", group_by, ['Committed Orders', 'Achieved Orders'], grouped, ['#ff7f0e', '#9467bd'], "Orders (Count)")
+plot_chart("Orders Comparison", group_by, ['Committed Orders', 'Achieved Orders'], grouped, ['#5C4B99', '#00B159'], "Orders (Count)")
 
 st.subheader(f"📈 Gross Margin Comparison by {group_by}")
-plot_chart("Gross Margin Comparison", group_by, ['Committed Gross Margin', 'Achieved Gross Margin'], grouped, ['#d62728', '#17becf'], "Gross Margin (USD)")
+plot_chart("Gross Margin Comparison", group_by, ['Committed Gross Margin', 'Achieved Gross Margin'], grouped, ['#D72638', '#17becf'], "Gross Margin (USD)")
