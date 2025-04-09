@@ -49,7 +49,7 @@ grouped = filtered_df.groupby(group_by).agg(agg_metrics).reset_index()
 
 # Sort Month-Year if selected
 if group_by == 'Month-Year':
-    grouped[group_by] = pd.to_datetime(grouped[group_by], format='%b-%Y')
+    grouped[group_by] = pd.to_datetime(grouped[group_by], errors='coerce')
     grouped = grouped.sort_values(by=group_by)
     grouped[group_by] = grouped[group_by].dt.strftime('%b-%Y')
 
@@ -74,69 +74,63 @@ st.dataframe(grouped.style.format({
     subset=['Revenue Conversion %', 'Orders Conversion %', 'GM Conversion %']
 ), use_container_width=True)
 
+# === Plotting function with fallback ===
+def plot_chart(title, df, x, y, colors, yaxis_title):
+    try:
+        fig = px.bar(
+            df,
+            x=x,
+            y=y,
+            barmode='group',
+            text_auto='.2s',
+            color_discrete_sequence=colors,
+            height=500
+        )
+        fig.update_layout(
+            title=title,
+            xaxis_title=x,
+            yaxis_title=yaxis_title,
+            xaxis_tickangle=45,
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='white',
+            font=dict(color='black'),  # <-- Ensures visibility
+            title_font=dict(size=18),
+            legend=dict(font=dict(size=12))
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    except Exception as e:
+        st.warning(f"⚠️ Could not render chart: {title}. Reason: {e}")
+
 # ========== Revenue Comparison ==========
 st.subheader(f"💰 Revenue Comparison by {group_by}")
-fig_rev = px.bar(
-    grouped,
+plot_chart(
+    title=f"Revenue Comparison by {group_by}",
+    df=grouped,
     x=group_by,
     y=['Committed Revenue', 'Achieved Revenue'],
-    barmode='group',
-    text_auto='.2s',
-    color_discrete_sequence=['#1f77b4', '#2ca02c'],
-    height=500
+    colors=['#1f77b4', '#2ca02c'],
+    yaxis_title="Revenue (USD)"
 )
-fig_rev.update_layout(
-    xaxis_title=group_by,
-    yaxis_title="Revenue (USD)",
-    xaxis_tickangle=45,
-    plot_bgcolor='rgba(0,0,0,0)',
-    paper_bgcolor='white',
-    title_font=dict(size=16),
-    legend=dict(font=dict(size=12))
-)
-st.plotly_chart(fig_rev, use_container_width=True)
 
 # ========== Orders Comparison ==========
 st.subheader(f"📦 Orders Comparison by {group_by}")
-fig_orders = px.bar(
-    grouped,
+plot_chart(
+    title=f"Orders Comparison by {group_by}",
+    df=grouped,
     x=group_by,
     y=['Committed Orders', 'Achieved Orders'],
-    barmode='group',
-    text_auto=True,
-    color_discrete_sequence=['#ff7f0e', '#9467bd'],
-    height=500
+    colors=['#ff7f0e', '#9467bd'],
+    yaxis_title="Orders (Count)"
 )
-fig_orders.update_layout(
-    xaxis_title=group_by,
-    yaxis_title="Orders (Count)",
-    xaxis_tickangle=45,
-    plot_bgcolor='rgba(0,0,0,0)',
-    paper_bgcolor='white',
-    title_font=dict(size=16),
-    legend=dict(font=dict(size=12))
-)
-st.plotly_chart(fig_orders, use_container_width=True)
 
 # ========== Gross Margin Comparison ==========
 st.subheader(f"📈 Gross Margin Comparison by {group_by}")
-fig_gm = px.bar(
-    grouped,
+plot_chart(
+    title=f"Gross Margin Comparison by {group_by}",
+    df=grouped,
     x=group_by,
     y=['Committed Gross Margin', 'Achieved Gross Margin'],
-    barmode='group',
-    text_auto='.2s',
-    color_discrete_sequence=['#d62728', '#17becf'],
-    height=500
+    colors=['#d62728', '#17becf'],
+    yaxis_title="Gross Margin (USD)"
 )
-fig_gm.update_layout(
-    xaxis_title=group_by,
-    yaxis_title="Gross Margin (USD)",
-    xaxis_tickangle=45,
-    plot_bgcolor='rgba(0,0,0,0)',
-    paper_bgcolor='white',
-    title_font=dict(size=16),
-    legend=dict(font=dict(size=12))
-)
-st.plotly_chart(fig_gm, use_container_width=True)
 
