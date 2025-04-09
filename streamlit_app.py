@@ -1,25 +1,20 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-import io
+from io import BytesIO
 
-# === Authentication (Streamlit Community Cloud) ===
-# Set up via https://docs.streamlit.io/streamlit-community-cloud/deploy-your-app/authentication
+st.set_page_config(page_title="Sales Dashboard", layout="wide")
 
-allowed_users = ["founder@example.com", "team@example.com"]
+# ====================
+# 🚪 Authentication
+# ====================
 if st.session_state.get("authentication_status") != True:
     st.error("🔒 Please log in to access the dashboard.")
     st.stop()
-elif st.session_state.get("username") not in allowed_users:
-    st.error("⛔ Unauthorized access.")
-    st.stop()
 
-# === App Title ===
-st.set_page_config(page_title="Sales Performance Dashboard", layout="wide")
-st.title("📊 Sales Performance Dashboard")
-st.markdown("Gain insights into order, revenue, and gross margin performance across time, customers, and teams.")
-
-# === Load & Cache Data ===
+# ====================
+# 📥 Data Loading
+# ====================
 @st.cache_data(ttl=3600)
 def load_data():
     url = "https://docs.google.com/spreadsheets/d/1VGd-4Ycj8mz8ZvDV2chLt4bG8DMjQ64fSLADkmXLsPo/export?format=xlsx"
@@ -29,8 +24,17 @@ def load_data():
 
 df = load_data()
 
-# === Sidebar Filters ===
+# ====================
+# 🧮 Calculations
+# ====================
+def safe_divide(numerator, denominator):
+    return (numerator / denominator) * 100 if denominator else 0
+
+# ====================
+# 🎛 Sidebar Filters
+# ====================
 st.sidebar.header("🔍 Filter Data")
+
 selected_months = st.sidebar.multiselect("📅 Select Month-Year", sorted(df['Month-Year'].dt.strftime('%b-%Y').unique()))
 selected_deal_managers = st.sidebar.multiselect("👨‍💼 Deal Manager", df['Deal Manager'].unique())
 selected_customers = st.sidebar.multiselect("🏢 Customer", df['Customer'].unique())
@@ -49,10 +53,23 @@ if selected_countries:
 if selected_plants:
     filtered_df = filtered_df[filtered_df['Plant Type'].isin(selected_plants)]
 
-# === Grouping Logic ===
+# ====================
+# 📊 KPI Summary
+# ====================
+st.title("📊 Sales Performance Dashboard")
+st.markdown("Use the filters in the sidebar to drill down performance by time, team, or market.")
+
+kpi1, kpi2, kpi3 = st.columns(3)
+kpi1.metric("💰 Total Achieved Revenue", f"${filtered_df['Achieved Revenue'].sum():,.0f}")
+kpi2.metric("📦 Total Achieved Orders", f"{filtered_df['Achieved Orders'].sum():,.0f}")
+kpi3.metric("📈 Achieved Gross Margin", f"${filtered_df['Achieved Gross Margin'].sum():,.0f}")
+
+# ====================
+# 📁 Grouping
+# ====================
 group_by = st.selectbox("📁 Group Data By", ['Month-Year', 'Deal Manager', 'Customer', 'Country', 'Plant Type'])
 
-agg_metrics = {
+agg = {
     'Committed Orders': 'sum',
     'Achieved Orders': 'sum',
     'Committed Revenue': 'sum',
@@ -60,29 +77,23 @@ agg_metrics = {
     'Committed Gross Margin': 'sum',
     'Achieved Gross Margin': 'sum'
 }
-grouped = filtered_df.groupby(group_by).agg(agg_metrics).reset_index()
+grouped = filtered_df.groupby(group_by).agg(agg).reset_index()
 
-# Sort month-year
 if group_by == 'Month-Year':
     grouped[group_by] = pd.to_datetime(grouped[group_by], errors='coerce')
     grouped = grouped.sort_values(by=group_by)
     grouped[group_by] = grouped[group_by].dt.strftime('%b-%Y')
 
-# === Conversion Metrics with NaN Protection ===
-grouped['Revenue Conversion %'] = (grouped['Achieved Revenue'] / grouped['Committed Revenue'].replace(0, pd.NA)) * 100
-grouped['Orders Conversion %'] = (grouped['Achieved Orders'] / grouped['Committed Orders'].replace(0, pd.NA)) * 100
-grouped['GM Conversion %'] = (grouped['Achieved Gross Margin'] / grouped['Committed Gross Margin'].replace(0, pd.NA)) * 100
+# Conversion % Calculations
+grouped['Revenue Conversion %'] = grouped.apply(lambda x: safe_divide(x['Achieved Revenue'], x['Committed Revenue']), axis=1)
+grouped['Orders Conversion %'] = grouped.apply(lambda x: safe_divide(x['Achieved Orders'], x['Committed Orders']), axis=1)
+grouped['GM Conversion %'] = grouped.apply(lambda x: safe_divide(x['Achieved Gross Margin'], x['Committed Gross Margin']), axis=1)
 
-# === KPIs ===
-col1, col2, col3 = st.columns(3)
-col1.metric("💰 Total Revenue", f"${grouped['Achieved Revenue'].sum():,.0f}")
-col2.metric("📦 Total Orders", f"{grouped['Achieved Orders'].sum():,.0f}")
-gm_pct = (grouped['Achieved Gross Margin'].sum() / grouped['Achieved Revenue'].sum()) * 100
-col3.metric("📈 Gross Margin %", f"{gm_pct:.1f}%")
-
-# === Styled Data Table ===
-st.subheader("🧾 Summary Table")
-st.dataframe(grouped.style.format({
+# ====================
+# 📋 Show Table
+# ====================
+st.subheader(f"🧾 Performance Table by {group_by}")
+styled = grouped.style.format({
     'Committed Revenue': '{:,.0f}',
     'Achieved Revenue': '{:,.0f}',
     'Revenue Conversion %': '{:.1f}%',
@@ -95,19 +106,37 @@ st.dataframe(grouped.style.format({
 }).applymap(
     lambda val: 'color: green' if isinstance(val, (int, float)) and val >= 100 else 'color: red',
     subset=['Revenue Conversion %', 'Orders Conversion %', 'GM Conversion %']
-), use_container_width=True)
+)
+st.dataframe(styled, use_container_width=True)
 
-# === Charting Function ===
-def plot_chart(title, df, x, y, colors, yaxis_title):
+# ====================
+# 📤 Download Option
+# ====================
+def convert_df_to_excel(df):
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Dashboard')
+        writer.close()
+    return output.getvalue()
+
+excel_data = convert_df_to_excel(grouped)
+st.download_button(
+    label="⬇️ Download Table as Excel",
+    data=excel_data,
+    file_name="sales_dashboard.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
+
+# ====================
+# 📊 Chart Function
+# ====================
+def plot_chart(title, x, y, df, colors, ylabel):
     try:
-        fig = px.bar(
-            df, x=x, y=y, barmode='group', text_auto='.2s',
-            color_discrete_sequence=colors, height=500
-        )
+        fig = px.bar(df, x=x, y=y, barmode="group", text_auto='.2s', color_discrete_sequence=colors)
         fig.update_layout(
             title=title,
             xaxis_title=x,
-            yaxis_title=yaxis_title,
+            yaxis_title=ylabel,
             xaxis_tickangle=45,
             plot_bgcolor='rgba(0,0,0,0)',
             paper_bgcolor='white',
@@ -119,45 +148,14 @@ def plot_chart(title, df, x, y, colors, yaxis_title):
     except Exception as e:
         st.warning(f"⚠️ Could not render chart: {title}. Reason: {e}")
 
-# === Charts ===
+# ====================
+# 📈 Visuals
+# ====================
 st.subheader(f"💰 Revenue Comparison by {group_by}")
-plot_chart(
-    title=f"Revenue Comparison by {group_by}",
-    df=grouped,
-    x=group_by,
-    y=['Committed Revenue', 'Achieved Revenue'],
-    colors=['#1f77b4', '#2ca02c'],
-    yaxis_title="Revenue (USD)"
-)
+plot_chart("Revenue Comparison", group_by, ['Committed Revenue', 'Achieved Revenue'], grouped, ['#1f77b4', '#2ca02c'], "Revenue (USD)")
 
 st.subheader(f"📦 Orders Comparison by {group_by}")
-plot_chart(
-    title=f"Orders Comparison by {group_by}",
-    df=grouped,
-    x=group_by,
-    y=['Committed Orders', 'Achieved Orders'],
-    colors=['#ff7f0e', '#9467bd'],
-    yaxis_title="Orders (Count)"
-)
+plot_chart("Orders Comparison", group_by, ['Committed Orders', 'Achieved Orders'], grouped, ['#ff7f0e', '#9467bd'], "Orders (Count)")
 
 st.subheader(f"📈 Gross Margin Comparison by {group_by}")
-plot_chart(
-    title=f"Gross Margin Comparison by {group_by}",
-    df=grouped,
-    x=group_by,
-    y=['Committed Gross Margin', 'Achieved Gross Margin'],
-    colors=['#d62728', '#17becf'],
-    yaxis_title="Gross Margin (USD)"
-)
-
-# === Excel Download Button ===
-buffer = io.BytesIO()
-with pd.ExcelWriter(buffer, engine='xlsxwriter') as writer:
-    grouped.to_excel(writer, index=False, sheet_name='Dashboard Data')
-
-st.download_button(
-    label="📥 Download Dashboard Data (Excel)",
-    data=buffer.getvalue(),
-    file_name="dashboard_data.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
+plot_chart("Gross Margin Comparison", group_by, ['Committed Gross Margin', 'Achieved Gross Margin'], grouped, ['#d62728', '#17becf'], "Gross Margin (USD)")
