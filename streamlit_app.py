@@ -12,7 +12,7 @@ col1, col2 = st.columns([0.1, 0.9])
 with col1:
     st.image("https://your-company-logo-url.com/logo.png", width=60)  # Replace with real logo URL
 with col2:
-    st.title("IndustroDash — Global Sales & Sourcing Dashboard")
+    st.title("Worldref Sales Dashboard")
 
 st.markdown("---")
 
