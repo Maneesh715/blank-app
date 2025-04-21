@@ -1,21 +1,21 @@
-# app.py
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 from io import BytesIO
 
-# 1. Set page title and layout
+# 1. Page Setup
 st.set_page_config(page_title="⚙️ IndustroDash", layout="wide", page_icon="📊")
 
-# 2. Load Logo and Add Header
+# 2. Logo & Header
 col1, col2 = st.columns([0.1, 0.9])
 with col1:
-    st.image("https://your-company-logo-url.com/logo.png", width=60)  # Replace with real logo URL
+    st.image("https://your-company-logo-url.com/logo.png", width=60)  # Replace with your logo URL
 with col2:
     st.title("Worldref Sales Dashboard")
 
 st.markdown("---")
 
+# 3. Load Data
 @st.cache_data(ttl=3600)
 def load_data():
     url = "https://docs.google.com/spreadsheets/d/1VGd-4Ycj8mz8ZvDV2chLt4bG8DMjQ64fSLADkmXLsPo/export?format=xlsx"
@@ -28,7 +28,7 @@ df = load_data()
 def safe_divide(numerator, denominator):
     return (numerator / denominator) * 100 if denominator else 0
 
-# 3. Sidebar with Filters
+# 4. Sidebar Filters
 st.sidebar.header("🔍 Filter Data")
 selected_months = st.sidebar.multiselect("📅 Select Month-Year", sorted(df['Month-Year'].dt.strftime('%b-%Y').unique()))
 selected_deal_managers = st.sidebar.multiselect("👨‍💼 Deal Manager", df['Deal Manager'].unique())
@@ -48,19 +48,18 @@ if selected_countries:
 if selected_plants:
     filtered_df = filtered_df[filtered_df['Plant Type'].isin(selected_plants)]
 
-# 4. Summary KPIs
+# 5. KPI Summary
 st.subheader("📊 Performance Summary")
 kpi1, kpi2, kpi3 = st.columns(3)
 kpi1.metric("💰 Total Achieved Revenue", f"${filtered_df['Achieved Revenue'].sum():,.0f}")
 kpi2.metric("📦 Total Achieved Orders", f"{filtered_df['Achieved Orders'].sum():,.0f}")
-
 achieved_gm_percent = safe_divide(
     filtered_df['Achieved Gross Margin'].sum(),
     filtered_df['Achieved Revenue'].sum()
 )
 kpi3.metric("📈 Achieved Gross Margin %", f"{achieved_gm_percent:.1f}%")
 
-# 5. Grouped Aggregation
+# 6. Grouped Aggregation
 group_by = st.selectbox("📁 Group Data By", ['Month-Year', 'Deal Manager', 'Customer', 'Country', 'Plant Type'])
 
 agg = {
@@ -83,7 +82,7 @@ grouped['Orders Conversion %'] = grouped.apply(lambda x: safe_divide(x['Achieved
 grouped['GM Conversion %'] = grouped.apply(lambda x: safe_divide(x['Achieved Gross Margin'], x['Committed Gross Margin']), axis=1)
 grouped['Achieved GM %'] = grouped.apply(lambda x: safe_divide(x['Achieved Gross Margin'], x['Achieved Revenue']), axis=1)
 
-# 6. Table Display
+# 7. Table Display
 st.subheader(f"📟 Detailed Performance by {group_by}")
 styled = grouped.style.format({
     'Committed Revenue': '{:,.0f}',
@@ -102,7 +101,7 @@ styled = grouped.style.format({
 )
 st.dataframe(styled, use_container_width=True)
 
-# 7. Download Excel Option
+# 8. Download Excel Option
 def convert_df_to_excel(df):
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
@@ -117,7 +116,7 @@ st.download_button(
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
 
-# 8. Custom Plot Function with Branded Colors
+# 9. Branded Bar Chart Function
 def plot_chart(title, x, y, df, colors, ylabel):
     fig = px.bar(df, x=x, y=y, barmode="group", text_auto='.2s', color_discrete_sequence=colors)
     fig.update_layout(
@@ -135,7 +134,7 @@ def plot_chart(title, x, y, df, colors, ylabel):
     )
     st.plotly_chart(fig, use_container_width=True)
 
-# 9. Branded Graph Colors
+# 10. Main Visualizations
 st.subheader(f"💰 Revenue Comparison by {group_by}")
 plot_chart("Revenue Comparison", group_by, ['Committed Revenue', 'Achieved Revenue'], grouped, ['#005B96', '#FFC20E'], "Revenue (USD)")
 
@@ -144,3 +143,27 @@ plot_chart("Orders Comparison", group_by, ['Committed Orders', 'Achieved Orders'
 
 st.subheader(f"📈 Gross Margin % by {group_by}")
 plot_chart("Achieved Gross Margin %", group_by, ['Achieved GM %'], grouped, ['#17becf'], "Gross Margin %")
+
+# 11. NEW: GM% by Multiple Dimensions
+st.subheader("🧩 Gross Margin % by Multiple Dimensions")
+dimension_cols = st.multiselect("📊 Choose Dimensions (e.g., Country, Plant Type)", ['Country', 'Plant Type', 'Deal Manager', 'Customer'])
+
+if dimension_cols:
+    combo_group = filtered_df.groupby(dimension_cols).agg({
+        'Achieved Gross Margin': 'sum',
+        'Achieved Revenue': 'sum'
+    }).reset_index()
+    combo_group['Achieved GM %'] = combo_group.apply(
+        lambda x: safe_divide(x['Achieved Gross Margin'], x['Achieved Revenue']), axis=1
+    )
+
+    combo_group['Group Label'] = combo_group[dimension_cols].astype(str).agg(' | '.join, axis=1)
+
+    plot_chart(
+        title=f"Achieved Gross Margin % by {' + '.join(dimension_cols)}",
+        x='Group Label',
+        y=['Achieved GM %'],
+        df=combo_group,
+        colors=['#F76C6C'],
+        ylabel='Gross Margin %'
+    )
