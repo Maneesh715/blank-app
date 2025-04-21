@@ -53,9 +53,9 @@ st.subheader("📊 Performance Summary")
 kpi1, kpi2, kpi3 = st.columns(3)
 kpi1.metric("💰 Total Achieved Revenue", f"${filtered_df['Achieved Revenue'].sum():,.0f}")
 kpi2.metric("📦 Total Achieved Orders", f"{filtered_df['Achieved Orders'].sum():,.0f}")
-kpi3.metric("📈 Avg. Achieved GM %", f"{safe_divide(filtered_df['Achieved Gross Margin'].sum(), filtered_df['Achieved Revenue'].sum()):.1f}%")
+kpi3.metric("📈 Achieved Gross Margin", f"${filtered_df['Achieved Gross Margin'].sum():,.0f}")
 
-# 5. Grouped Aggregation with GM %
+# 5. Grouped Aggregation
 group_by = st.selectbox("📁 Group Data By", ['Month-Year', 'Deal Manager', 'Customer', 'Country', 'Plant Type'])
 
 agg = {
@@ -76,27 +76,24 @@ if group_by == 'Month-Year':
 grouped['Revenue Conversion %'] = grouped.apply(lambda x: safe_divide(x['Achieved Revenue'], x['Committed Revenue']), axis=1)
 grouped['Orders Conversion %'] = grouped.apply(lambda x: safe_divide(x['Achieved Orders'], x['Committed Orders']), axis=1)
 grouped['GM Conversion %'] = grouped.apply(lambda x: safe_divide(x['Achieved Gross Margin'], x['Committed Gross Margin']), axis=1)
-grouped['Committed GM %'] = grouped.apply(lambda x: safe_divide(x['Committed Gross Margin'], x['Committed Revenue']), axis=1)
-grouped['Achieved GM %'] = grouped.apply(lambda x: safe_divide(x['Achieved Gross Margin'], x['Achieved Revenue']), axis=1)
 
 # 6. Table Display
-st.subheader(f"📿 Detailed Performance by {group_by}")
-st.dataframe(
-    grouped.style.format({
-        'Committed Revenue': '{:,.0f}',
-        'Achieved Revenue': '{:,.0f}',
-        'Revenue Conversion %': '{:.1f}%',
-        'Committed Orders': '{:,.0f}',
-        'Achieved Orders': '{:,.0f}',
-        'Orders Conversion %': '{:.1f}%',
-        'Committed Gross Margin': '{:,.0f}',
-        'Achieved Gross Margin': '{:,.0f}',
-        'GM Conversion %': '{:.1f}%',
-        'Committed GM %': '{:.1f}%',
-        'Achieved GM %': '{:.1f}%'
-    }),
-    use_container_width=True
+st.subheader(f"📟 Detailed Performance by {group_by}")
+styled = grouped.style.format({
+    'Committed Revenue': '{:,.0f}',
+    'Achieved Revenue': '{:,.0f}',
+    'Revenue Conversion %': '{:.1f}%',
+    'Committed Orders': '{:,.0f}',
+    'Achieved Orders': '{:,.0f}',
+    'Orders Conversion %': '{:.1f}%',
+    'Committed Gross Margin': '{:,.0f}',
+    'Achieved Gross Margin': '{:,.0f}',
+    'GM Conversion %': '{:.1f}%'
+}).applymap(
+    lambda val: 'color: green' if isinstance(val, (int, float)) and val >= 100 else 'color: red',
+    subset=['Revenue Conversion %', 'Orders Conversion %', 'GM Conversion %']
 )
+st.dataframe(styled, use_container_width=True)
 
 # 7. Download Excel Option
 def convert_df_to_excel(df):
@@ -138,9 +135,6 @@ plot_chart("Revenue Comparison", group_by, ['Committed Revenue', 'Achieved Reven
 st.subheader(f"📦 Orders Comparison by {group_by}")
 plot_chart("Orders Comparison", group_by, ['Committed Orders', 'Achieved Orders'], grouped, ['#5C4B99', '#00B159'], "Orders (Count)")
 
-st.subheader(f"📈 Gross Margin Comparison by {group_by}")
-plot_chart("Gross Margin Comparison", group_by, ['Committed Gross Margin', 'Achieved Gross Margin'], grouped, ['#D72638', '#17becf'], "Gross Margin (USD)")
-
-st.subheader(f"📊 Gross Margin % by {group_by}")
-plot_chart("Gross Margin %", group_by, ['Committed GM %', 'Achieved GM %'], grouped, ['#F4A261', '#2A9D8F'], "Gross Margin %")
+st.subheader(f"📈 Gross Margin Conversion % by {group_by}")
+plot_chart("Gross Margin Conversion %", group_by, ['GM Conversion %'], grouped, ['#17becf'], "Conversion %")
 
