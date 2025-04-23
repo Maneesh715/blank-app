@@ -4,7 +4,7 @@ import plotly.express as px
 from io import BytesIO
 
 # 1. Page Setup
-st.set_page_config(page_title="⚙️ IndustroDash", layout="wide", page_icon="📊")
+st.set_page_config(page_title="⚙️ Worldref", layout="wide", page_icon="📊")
 
 # 2. Logo & Header
 col1, col2 = st.columns([0.1, 0.9])
