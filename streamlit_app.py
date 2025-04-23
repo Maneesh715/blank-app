@@ -9,7 +9,7 @@ st.set_page_config(page_title="⚙️ IndustroDash", layout="wide", page_icon="�
 # 2. Logo & Header
 col1, col2 = st.columns([0.1, 0.9])
 with col1:
-    st.image("https://drive.google.com/file/d/1mrO01zw9OYPu3iZEay-ax6WcSNEdDFmx/view?usp=drive_link.jpg", width=60)  # Replace with your logo URL
+    st.image("https://drive.google.com/file/d/1mrO01zw9OYPu3iZEay-ax6WcSNEdDFmx/view?usp=drive_link.jpg", width=600)  # Replace with your logo URL
 with col2:
     st.title("Worldref Sales Dashboard")
 
