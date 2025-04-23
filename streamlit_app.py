@@ -52,7 +52,7 @@ if selected_plants:
 st.subheader("📊 Performance Summary")
 kpi1, kpi2, kpi3 = st.columns(3)
 kpi1.metric("💰 Total Achieved Revenue", f"${filtered_df['Achieved Revenue'].sum():,.0f}")
-kpi2.metric("📦 Total Achieved Orders", f"{filtered_df['Achieved Orders'].sum():,.0f}")
+kpi2.metric("📦 Total Achieved Orders", f"${filtered_df['Achieved Orders'].sum():,.0f}")
 achieved_gm_percent = safe_divide(
     filtered_df['Achieved Gross Margin'].sum(),
     filtered_df['Achieved Revenue'].sum()
