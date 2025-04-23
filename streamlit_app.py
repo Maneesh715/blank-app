@@ -139,7 +139,7 @@ st.subheader(f"💰 Revenue Comparison by {group_by}")
 plot_chart("Revenue Comparison", group_by, ['Committed Revenue', 'Achieved Revenue'], grouped, ['#005B96', '#FFC20E'], "Revenue (USD)")
 
 st.subheader(f"📦 Orders Comparison by {group_by}")
-plot_chart("Orders Comparison", group_by, ['Committed Orders', 'Achieved Orders'], grouped, ['#5C4B99', '#00B159'], "Orders (Count)")
+plot_chart("Orders Comparison", group_by, ['Committed Orders', 'Achieved Orders'], grouped, ['#5C4B99', '#00B159'], "Orders (USD)")
 
 st.subheader(f"📈 Gross Margin % by {group_by}")
 plot_chart("Achieved Gross Margin %", group_by, ['Achieved GM %'], grouped, ['#17becf'], "Gross Margin %")
