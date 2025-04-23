@@ -9,7 +9,7 @@ st.set_page_config(page_title="⚙️ IndustroDash", layout="wide", page_icon="�
 # 2. Logo & Header
 col1, col2 = st.columns([0.1, 0.9])
 with col1:
-    st.image("https://your-company-logo-url.com/logo.png", width=60)  # Replace with your logo URL
+    st.image("C:/Users/user/Desktop/Worldref Logo.jpg", width=60)  # Replace with your logo URL
 with col2:
     st.title("Worldref Sales Dashboard")
 
@@ -95,7 +95,7 @@ styled = grouped.style.format({
     'Achieved Gross Margin': '{:,.0f}',
     'GM Conversion %': '{:.1f}%',
     'Achieved GM %': '{:.1f}%'
-}).applymap(
+}).map(
     lambda val: 'color: green' if isinstance(val, (int, float)) and val >= 100 else 'color: red',
     subset=['Revenue Conversion %', 'Orders Conversion %', 'GM Conversion %']
 )
@@ -112,7 +112,7 @@ excel_data = convert_df_to_excel(grouped)
 st.download_button(
     label="⬇️ Download Table as Excel",
     data=excel_data,
-    file_name="industro_sales_dashboard.xlsx",
+    file_name="worldref_sales_dashboard.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
 
