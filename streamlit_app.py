@@ -81,7 +81,7 @@ chart_mode = st.radio("Chart Mode", ['Grouped', 'Stacked'], horizontal=True)
 # Gross Margin View Toggle (Value / %)
 gm_view = st.radio("Gross Margin View", ['By Value', 'By %'], horizontal=True)
 
-# Helper to draw bar charts with custom colors
+# Helper to draw bar charts with custom colors and values on top
 def draw_bar_chart(df, y1, y2, title, yaxis_title):
     df_grouped = df.groupby('Month-Year')[[y1, y2]].sum().reset_index()
     df_melted = df_grouped.melt(id_vars='Month-Year', value_vars=[y1, y2], var_name='Metric', value_name='Value')
@@ -94,7 +94,7 @@ def draw_bar_chart(df, y1, y2, title, yaxis_title):
     }
 
     fig = px.bar(df_melted, x='Month-Year', y='Value', color='Metric', barmode=barmode, title=title, 
-                 color_discrete_map=custom_colors)
+                 color_discrete_map=custom_colors, text='Value')  # Show values on top of bars
     
     fig.update_layout(
         yaxis_title=yaxis_title, 
@@ -107,6 +107,10 @@ def draw_bar_chart(df, y1, y2, title, yaxis_title):
         paper_bgcolor='rgba(0,0,0,0)',  # Transparent background
         margin=dict(t=60, b=40, l=40, r=40)  # Adjust margins
     )
+    
+    # Enable values to appear on top of bars
+    fig.update_traces(texttemplate='%{text:.2s}', textposition='outside')
+
     return fig
 
 # Calculate Summary for KPIs
@@ -158,8 +162,9 @@ else:
     df_melted = df_gm.melt(id_vars='Month-Year', value_vars=['Committed GM %', 'Achieved GM %'], var_name='Metric', value_name='Value')
     barmode = 'group' if chart_mode == 'Grouped' else 'stack'
     fig = px.bar(df_melted, x='Month-Year', y='Value', color='Metric', barmode=barmode, title="Gross Margin (%)",
-                 color_discrete_map={'Committed GM %': '#007BFF', 'Achieved GM %': '#28A745'})
+                 color_discrete_map={'Committed GM %': '#007BFF', 'Achieved GM %': '#28A745'}, text='Value')
     fig.update_layout(yaxis_title="Gross Margin %")
+    fig.update_traces(texttemplate='%{text:.2s}', textposition='outside')  # Display values on top of the bars
     st.plotly_chart(fig)
 
 # Delta Summary Table with improved styling
