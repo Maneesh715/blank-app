@@ -82,15 +82,15 @@ chart_mode = st.radio("Chart Mode", ['Grouped', 'Stacked'], horizontal=True)
 gm_view = st.radio("Gross Margin View", ['By Value', 'By %'], horizontal=True)
 
 # Helper to draw bar charts with custom colors and values on top
-def draw_bar_chart(df, y1, y2, title, yaxis_title):
+def draw_bar_chart(df, y1, y2, title, yaxis_title, y1_color, y2_color):
     df_grouped = df.groupby('Month-Year')[[y1, y2]].sum().reset_index()
     df_melted = df_grouped.melt(id_vars='Month-Year', value_vars=[y1, y2], var_name='Metric', value_name='Value')
     barmode = 'group' if chart_mode == 'Grouped' else 'stack'
 
-    # Custom colors for Committed (dark blue) and Achieved (yellowish orange)
+    # Custom colors for Committed and Achieved as per the request
     custom_colors = {
-        'Committed': '#003366',  # Dark Blue for Committed
-        'Achieved': '#FFA500'    # Yellowish Orange for Achieved
+        y1: y1_color,  # Dark Blue for Committed
+        y2: y2_color   # Yellowish Orange for Achieved
     }
 
     fig = px.bar(df_melted, x='Month-Year', y='Value', color='Metric', barmode=barmode, title=title, 
@@ -147,16 +147,16 @@ col4.metric("Gross Margin %", f"{avg_achieved_gm_pct:.2f}%", f"{avg_achieved_gm_
 
 # Orders Comparison with chart
 st.subheader("📦 Orders Comparison")
-st.plotly_chart(draw_bar_chart(filtered_df, 'Committed Orders', 'Achieved Orders', "Orders Comparison", "Orders"))
+st.plotly_chart(draw_bar_chart(filtered_df, 'Committed Orders', 'Achieved Orders', "Orders Comparison", "Orders", "#003366", "#FFA500"))
 
 # Revenue Comparison with chart
 st.subheader("💰 Revenue Comparison")
-st.plotly_chart(draw_bar_chart(filtered_df, 'Committed Revenue', 'Achieved Revenue', "Revenue Comparison", "Revenue"))
+st.plotly_chart(draw_bar_chart(filtered_df, 'Committed Revenue', 'Achieved Revenue', "Revenue Comparison", "Revenue", "#003366", "#FFA500"))
 
 # Gross Margin Comparison with view toggle
 st.subheader("📈 Gross Margin Comparison")
 if gm_view == 'By Value':
-    st.plotly_chart(draw_bar_chart(filtered_df, 'Committed Gross Margin', 'Achieved Gross Margin', "Gross Margin (Value)", "Gross Margin Value"))
+    st.plotly_chart(draw_bar_chart(filtered_df, 'Committed Gross Margin', 'Achieved Gross Margin', "Gross Margin (Value)", "Gross Margin Value", "#003366", "#FFA500"))
 else:
     df_gm = filtered_df.groupby('Month-Year')[['Committed GM %', 'Achieved GM %']].mean().reset_index()
     df_melted = df_gm.melt(id_vars='Month-Year', value_vars=['Committed GM %', 'Achieved GM %'], var_name='Metric', value_name='Value')
@@ -182,11 +182,3 @@ st.dataframe(delta_table.style.format({
     'Delta GM Value': '{:,.0f}',
     'Delta GM %': '{:.2f}%'
 }))
-
-# Download button for Excel file
-st.download_button(
-    label="Download Delta Summary as Excel",
-    data=excel_data,
-    file_name="delta_summary.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
