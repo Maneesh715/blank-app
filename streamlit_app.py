@@ -81,13 +81,32 @@ chart_mode = st.radio("Chart Mode", ['Grouped', 'Stacked'], horizontal=True)
 # Gross Margin View Toggle (Value / %)
 gm_view = st.radio("Gross Margin View", ['By Value', 'By %'], horizontal=True)
 
-# Helper to draw bar charts
+# Helper to draw bar charts with custom colors
 def draw_bar_chart(df, y1, y2, title, yaxis_title):
     df_grouped = df.groupby('Month-Year')[[y1, y2]].sum().reset_index()
     df_melted = df_grouped.melt(id_vars='Month-Year', value_vars=[y1, y2], var_name='Metric', value_name='Value')
     barmode = 'group' if chart_mode == 'Grouped' else 'stack'
-    fig = px.bar(df_melted, x='Month-Year', y='Value', color='Metric', barmode=barmode, title=title)
-    fig.update_layout(yaxis_title=yaxis_title, plot_bgcolor="#F7F8FA", template="plotly_dark")
+
+    # Custom colors for Committed and Achieved
+    custom_colors = {
+        'Committed': '#007BFF',  # Blue for Committed
+        'Achieved': '#28A745'    # Green for Achieved
+    }
+
+    fig = px.bar(df_melted, x='Month-Year', y='Value', color='Metric', barmode=barmode, title=title, 
+                 color_discrete_map=custom_colors)
+    
+    fig.update_layout(
+        yaxis_title=yaxis_title, 
+        plot_bgcolor="#F7F8FA", 
+        template="plotly_dark",
+        xaxis=dict(showgrid=True, zeroline=False),  # Stylish x-axis grid
+        yaxis=dict(showgrid=True, zeroline=False),  # Stylish y-axis grid
+        title_font=dict(size=18, family='Arial', color='white'),  # Title Font
+        legend_title=dict(text="Metrics", font=dict(size=14, color='white')),
+        paper_bgcolor='rgba(0,0,0,0)',  # Transparent background
+        margin=dict(t=60, b=40, l=40, r=40)  # Adjust margins
+    )
     return fig
 
 # Calculate Summary for KPIs
@@ -138,7 +157,8 @@ else:
     df_gm = filtered_df.groupby('Month-Year')[['Committed GM %', 'Achieved GM %']].mean().reset_index()
     df_melted = df_gm.melt(id_vars='Month-Year', value_vars=['Committed GM %', 'Achieved GM %'], var_name='Metric', value_name='Value')
     barmode = 'group' if chart_mode == 'Grouped' else 'stack'
-    fig = px.bar(df_melted, x='Month-Year', y='Value', color='Metric', barmode=barmode, title="Gross Margin (%)")
+    fig = px.bar(df_melted, x='Month-Year', y='Value', color='Metric', barmode=barmode, title="Gross Margin (%)",
+                 color_discrete_map={'Committed GM %': '#007BFF', 'Achieved GM %': '#28A745'})
     fig.update_layout(yaxis_title="Gross Margin %")
     st.plotly_chart(fig)
 
