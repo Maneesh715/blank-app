@@ -24,10 +24,10 @@ def load_data():
     df = pd.merge(sheet1, sheet2[['Deal ID', 'Committed Revenue', 'Achieved Revenue']], on='Deal ID', how='outer')
 
     # Adding committed and achieved gross margin from sheet3
-    sheet3['Committed Gross Margin'] = sheet3['Committed Revenue'] - (
+    sheet3['Committed Gross Margin'] = sheet2['Committed Revenue'] - (
         sheet3['Committed COGS'] + sheet3['Committed Logistics'] + sheet3['Committed P&F']
     )
-    sheet3['Achieved Gross Margin'] = sheet3['Achieved Revenue'] - (
+    sheet3['Achieved Gross Margin'] = sheet2['Achieved Revenue'] - (
         sheet3['Achieved COGS'] + sheet3['Achieved Logistics'] + sheet3['Achieved P&F']
     )
 
