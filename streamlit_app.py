@@ -20,8 +20,10 @@ def load_data():
     sheet2 = xls['Sheet2']
     sheet3 = xls['Sheet3']
 
-    df = pd.merge(sheet1, sheet2, on=['Month-Year', 'Deal Manager', 'Deal ID', 'Customer', 'New Customer', 'Country', 'Plant Type'], how='outer')
+    # Merging sheet1 with sheet2 using Deal ID as the unique key
+    df = pd.merge(sheet1, sheet2[['Deal ID', 'Committed Revenue', 'Achieved Revenue']], on='Deal ID', how='outer')
 
+    # Adding committed and achieved gross margin from sheet3
     sheet3['Committed Gross Margin'] = sheet3['Committed Revenue'] - (
         sheet3['Committed COGS'] + sheet3['Committed Logistics'] + sheet3['Committed P&F']
     )
@@ -29,13 +31,11 @@ def load_data():
         sheet3['Achieved COGS'] + sheet3['Achieved Logistics'] + sheet3['Achieved P&F']
     )
 
-    df = pd.merge(df, sheet3[['Month-Year', 'Deal Manager', 'Deal ID', 'Customer', 'New Customer', 'Country', 'Plant Type', 
-                              'Committed Gross Margin', 'Achieved Gross Margin']],
-                  on=['Month-Year', 'Deal Manager', 'Deal ID', 'Customer', 'New Customer', 'Country', 'Plant Type'], how='outer')
+    df = pd.merge(df, sheet3[['Deal ID', 'Committed Gross Margin', 'Achieved Gross Margin']],
+                  on='Deal ID', how='outer')
 
     df['Month-Year'] = pd.to_datetime(df['Month-Year'], format='%b-%Y')
-    df['Financial Year'] = df['Month-Year'].apply(lambda x: f"FY{x.year+1}" if x.month >= 4 else f"FY{x.year}")
-    
+
     # Calculate Gross Margin % fields
     df['Committed GM %'] = df.apply(lambda row: safe_divide(row['Committed Gross Margin'], row['Committed Revenue']), axis=1)
     df['Achieved GM %'] = df.apply(lambda row: safe_divide(row['Achieved Gross Margin'], row['Achieved Revenue']), axis=1)
@@ -46,7 +46,7 @@ df = load_data()
 
 # Sidebar Filters
 st.sidebar.title("🔍 Filters")
-filter_cols = ['Financial Year', 'Deal Manager', 'Customer', 'New Customer', 'Country', 'Plant Type']
+filter_cols = ['Month-Year', 'Deal Manager', 'Customer', 'New Customer', 'Country', 'Plant Type']
 
 filters = {}
 for col in filter_cols:
@@ -67,15 +67,15 @@ gm_view = st.radio("Gross Margin View", ['By Value', 'By %'], horizontal=True)
 
 # Helper to draw bar charts
 def draw_bar_chart(df, y1, y2, title, yaxis_title):
-    df_grouped = df.groupby('Financial Year')[[y1, y2]].sum().reset_index()
-    df_melted = df_grouped.melt(id_vars='Financial Year', value_vars=[y1, y2], var_name='Metric', value_name='Value')
+    df_grouped = df.groupby('Month-Year')[[y1, y2]].sum().reset_index()
+    df_melted = df_grouped.melt(id_vars='Month-Year', value_vars=[y1, y2], var_name='Metric', value_name='Value')
     barmode = 'group' if chart_mode == 'Grouped' else 'stack'
-    fig = px.bar(df_melted, x='Financial Year', y='Value', color='Metric', barmode=barmode, title=title)
+    fig = px.bar(df_melted, x='Month-Year', y='Value', color='Metric', barmode=barmode, title=title)
     fig.update_layout(yaxis_title=yaxis_title)
     return fig
 
 # Calculate Summary for KPIs
-summary = filtered_df.groupby('Financial Year').agg({
+summary = filtered_df.groupby('Month-Year').agg({
     'Achieved Orders': 'sum',
     'Committed Orders': 'sum',
     'Achieved Revenue': 'sum',
@@ -120,10 +120,10 @@ st.subheader("📈 Gross Margin Comparison")
 if gm_view == 'By Value':
     st.plotly_chart(draw_bar_chart(filtered_df, 'Committed Gross Margin', 'Achieved Gross Margin', "Gross Margin (Value)", "Gross Margin Value"))
 else:
-    df_gm = filtered_df.groupby('Financial Year')[['Committed GM %', 'Achieved GM %']].mean().reset_index()
-    df_melted = df_gm.melt(id_vars='Financial Year', value_vars=['Committed GM %', 'Achieved GM %'], var_name='Metric', value_name='Value')
+    df_gm = filtered_df.groupby('Month-Year')[['Committed GM %', 'Achieved GM %']].mean().reset_index()
+    df_melted = df_gm.melt(id_vars='Month-Year', value_vars=['Committed GM %', 'Achieved GM %'], var_name='Metric', value_name='Value')
     barmode = 'group' if chart_mode == 'Grouped' else 'stack'
-    fig = px.bar(df_melted, x='Financial Year', y='Value', color='Metric', barmode=barmode, title="Gross Margin (%)")
+    fig = px.bar(df_melted, x='Month-Year', y='Value', color='Metric', barmode=barmode, title="Gross Margin (%)")
     fig.update_layout(yaxis_title="Gross Margin %")
     st.plotly_chart(fig)
 
@@ -135,7 +135,7 @@ summary['Delta Revenue'] = summary['Achieved Revenue'] - summary['Committed Reve
 summary['Delta GM Value'] = summary['Achieved Gross Margin'] - summary['Committed Gross Margin']
 summary['Delta GM %'] = summary['Achieved GM %'] - summary['Committed GM %']
 
-delta_table = summary[['Financial Year', 'Delta Orders', 'Delta Revenue', 'Delta GM Value', 'Delta GM %']]
+delta_table = summary[['Month-Year', 'Delta Orders', 'Delta Revenue', 'Delta GM Value', 'Delta GM %']]
 st.dataframe(delta_table.style.format({
     'Delta Orders': '{:,.0f}',
     'Delta Revenue': '{:,.0f}',
