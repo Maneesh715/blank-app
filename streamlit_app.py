@@ -87,10 +87,10 @@ def draw_bar_chart(df, y1, y2, title, yaxis_title):
     df_melted = df_grouped.melt(id_vars='Month-Year', value_vars=[y1, y2], var_name='Metric', value_name='Value')
     barmode = 'group' if chart_mode == 'Grouped' else 'stack'
 
-    # Custom colors for Committed and Achieved
+    # Custom colors for Committed (dark blue) and Achieved (yellowish orange)
     custom_colors = {
-        'Committed': '#007BFF',  # Blue for Committed
-        'Achieved': '#28A745'    # Green for Achieved
+        'Committed': '#003366',  # Dark Blue for Committed
+        'Achieved': '#FFA500'    # Yellowish Orange for Achieved
     }
 
     fig = px.bar(df_melted, x='Month-Year', y='Value', color='Metric', barmode=barmode, title=title, 
@@ -162,7 +162,7 @@ else:
     df_melted = df_gm.melt(id_vars='Month-Year', value_vars=['Committed GM %', 'Achieved GM %'], var_name='Metric', value_name='Value')
     barmode = 'group' if chart_mode == 'Grouped' else 'stack'
     fig = px.bar(df_melted, x='Month-Year', y='Value', color='Metric', barmode=barmode, title="Gross Margin (%)",
-                 color_discrete_map={'Committed GM %': '#007BFF', 'Achieved GM %': '#28A745'}, text='Value')
+                 color_discrete_map={'Committed GM %': '#003366', 'Achieved GM %': '#FFA500'}, text='Value')
     fig.update_layout(yaxis_title="Gross Margin %")
     fig.update_traces(texttemplate='%{text:.2s}', textposition='outside')  # Display values on top of the bars
     st.plotly_chart(fig)
@@ -183,18 +183,9 @@ st.dataframe(delta_table.style.format({
     'Delta GM %': '{:.2f}%'
 }))
 
-# Download Button with icon
-def convert_df_to_excel(df):
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False, sheet_name='Delta Summary')
-    processed_data = output.getvalue()
-    return processed_data
-
-excel_data = convert_df_to_excel(delta_table)
-
+# Download button for Excel file
 st.download_button(
-    label="📥 Download Delta Summary as Excel",
+    label="Download Delta Summary as Excel",
     data=excel_data,
     file_name="delta_summary.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
