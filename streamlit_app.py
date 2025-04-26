@@ -57,7 +57,8 @@ for col in filter_cols:
 # Apply filters
 filtered_df = df.copy()
 for col, selected_vals in filters.items():
-    filtered_df = filtered_df[filtered_df[col].isin(selected_vals)]
+    if selected_vals:  # If there are selected values, apply the filter
+        filtered_df = filtered_df[filtered_df[col].isin(selected_vals)]
 
 # Chart Mode Toggle (Grouped / Stacked)
 chart_mode = st.radio("Chart Mode", ['Grouped', 'Stacked'], horizontal=True)
