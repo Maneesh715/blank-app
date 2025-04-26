@@ -66,7 +66,7 @@ filter_cols = ['Month-Year', 'Deal Manager', 'Customer', 'New Customer', 'Countr
 filters = {}
 for col in filter_cols:
     options = df[col].dropna().unique().tolist()
-    selection = st.sidebar.multiselect(f"Select {col}", options, default=options)
+    selection = st.sidebar.multiselect(f"Select {col}", options, default=[])
     filters[col] = selection
 
 # Apply filters, show overall data if no selection is made
