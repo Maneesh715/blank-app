@@ -3,9 +3,24 @@ import pandas as pd
 import plotly.express as px
 from io import BytesIO
 
-# Set Streamlit page config
+# Set Streamlit page config with a wider layout and title
 st.set_page_config(page_title="Sales Dashboard", layout="wide")
+
+# Add custom CSS for styling
+st.markdown("""
+    <style>
+    .main {background-color: #f7f8fa;}
+    .sidebar .sidebar-content {background-color: #4CAF50;}
+    .stButton button {background-color: #4CAF50; color: white;}
+    .stMetric .stMarkdown {font-size: 18px; color: #333;}
+    .css-ffhzg2 {font-family: 'Arial', sans-serif;}
+    .stBlockquote {background-color: #e7f3e1; padding: 10px;}
+    </style>
+""", unsafe_allow_html=True)
+
+# Title with Emoji and subtitle for a more attractive look
 st.title("🚀 Sales Dashboard")
+st.markdown("<h3 style='color: #4CAF50;'>Track your sales, margins, and revenue in real-time!</h3>", unsafe_allow_html=True)
 
 # Safe division function
 def safe_divide(numerator, denominator):
@@ -44,7 +59,7 @@ def load_data():
 
 df = load_data()
 
-# Sidebar Filters
+# Sidebar Filters with custom styling and icons
 st.sidebar.title("🔍 Filters")
 filter_cols = ['Month-Year', 'Deal Manager', 'Customer', 'New Customer', 'Country', 'Plant Type']
 
@@ -54,10 +69,10 @@ for col in filter_cols:
     selection = st.sidebar.multiselect(f"Select {col}", options, default=options)
     filters[col] = selection
 
-# Apply filters
+# Apply filters, show overall data if no selection is made
 filtered_df = df.copy()
 for col, selected_vals in filters.items():
-    if selected_vals:  # If there are selected values, apply the filter
+    if selected_vals:
         filtered_df = filtered_df[filtered_df[col].isin(selected_vals)]
 
 # Chart Mode Toggle (Grouped / Stacked)
@@ -72,7 +87,7 @@ def draw_bar_chart(df, y1, y2, title, yaxis_title):
     df_melted = df_grouped.melt(id_vars='Month-Year', value_vars=[y1, y2], var_name='Metric', value_name='Value')
     barmode = 'group' if chart_mode == 'Grouped' else 'stack'
     fig = px.bar(df_melted, x='Month-Year', y='Value', color='Metric', barmode=barmode, title=title)
-    fig.update_layout(yaxis_title=yaxis_title)
+    fig.update_layout(yaxis_title=yaxis_title, plot_bgcolor="#F7F8FA", template="plotly_dark")
     return fig
 
 # Calculate Summary for KPIs
@@ -87,9 +102,8 @@ summary = filtered_df.groupby('Month-Year').agg({
     'Committed GM %': 'mean'
 }).reset_index()
 
-# Top KPI cards
+# Top KPI cards with enhanced styling
 st.subheader("📈 Overall Performance KPIs")
-
 total_committed_orders = summary['Committed Orders'].sum()
 total_achieved_orders = summary['Achieved Orders'].sum()
 
@@ -108,15 +122,15 @@ col2.metric("Revenue (Achieved vs Committed)", f"${total_achieved_revenue:,.0f}"
 col3.metric("Gross Margin Value", f"${total_achieved_gm:,.0f}", f"{safe_divide(total_achieved_gm, total_committed_gm) - 100:.2f}%")
 col4.metric("Gross Margin %", f"{avg_achieved_gm_pct:.2f}%", f"{avg_achieved_gm_pct - avg_committed_gm_pct:.2f}%")
 
-# Orders Comparison
+# Orders Comparison with chart
 st.subheader("📦 Orders Comparison")
 st.plotly_chart(draw_bar_chart(filtered_df, 'Committed Orders', 'Achieved Orders', "Orders Comparison", "Orders"))
 
-# Revenue Comparison
+# Revenue Comparison with chart
 st.subheader("💰 Revenue Comparison")
 st.plotly_chart(draw_bar_chart(filtered_df, 'Committed Revenue', 'Achieved Revenue', "Revenue Comparison", "Revenue"))
 
-# Gross Margin Comparison
+# Gross Margin Comparison with view toggle
 st.subheader("📈 Gross Margin Comparison")
 if gm_view == 'By Value':
     st.plotly_chart(draw_bar_chart(filtered_df, 'Committed Gross Margin', 'Achieved Gross Margin', "Gross Margin (Value)", "Gross Margin Value"))
@@ -128,7 +142,7 @@ else:
     fig.update_layout(yaxis_title="Gross Margin %")
     st.plotly_chart(fig)
 
-# Delta Summary Table
+# Delta Summary Table with improved styling
 st.subheader("📊 Delta Summary Table (Achieved – Committed)")
 
 summary['Delta Orders'] = summary['Achieved Orders'] - summary['Committed Orders']
@@ -144,7 +158,7 @@ st.dataframe(delta_table.style.format({
     'Delta GM %': '{:.2f}%'
 }))
 
-# Download Button
+# Download Button with icon
 def convert_df_to_excel(df):
     output = BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
