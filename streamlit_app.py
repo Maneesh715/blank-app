@@ -1,169 +1,84 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from io import BytesIO
 
-# 1. Page Setup
-st.set_page_config(page_title="⚙️ Worldref", layout="wide", page_icon="📊")
-
-# 2. Logo & Header
-col1, col2 = st.columns([0.1, 0.9])
-with col1:
-    st.image("https://drive.google.com/file/d/1mrO01zw9OYPu3iZEay-ax6WcSNEdDFmx/view?usp=drive_link.jpg", width=600)  # Replace with your logo URL
-with col2:
-    st.title("Worldref Sales Dashboard")
-
-st.markdown("---")
-
-# 3. Load Data
-@st.cache_data(ttl=3600)
+# Load preprocessed data
+@st.cache_data
 def load_data():
-    url = "https://docs.google.com/spreadsheets/d/1VGd-4Ycj8mz8ZvDV2chLt4bG8DMjQ64fSLADkmXLsPo/export?format=xlsx"
-    df = pd.read_excel(url, engine="openpyxl")
-    df['Month-Year'] = pd.to_datetime(df['Month-Year'], format='%b-%Y')
-    return df
+    return pd.read_excel("final_output.xlsx")
 
 df = load_data()
 
-def safe_divide(numerator, denominator):
-    return (numerator / denominator) * 100 if denominator else 0
+# Convert relevant columns to strings
+columns_to_string = ['Financial Year', 'Customer Group', 'Country', 'Region', 'Sales Manager', 'Business Unit']
+for col in columns_to_string:
+    df[col] = df[col].astype(str)
 
-# 4. Sidebar Filters
-st.sidebar.header("🔍 Filter Data")
-selected_months = st.sidebar.multiselect("📅 Select Month-Year", sorted(df['Month-Year'].dt.strftime('%b-%Y').unique()))
-selected_deal_managers = st.sidebar.multiselect("👨‍💼 Deal Manager", df['Deal Manager'].unique())
-selected_customers = st.sidebar.multiselect("🏢 Customer", df['Customer'].unique())
-selected_countries = st.sidebar.multiselect("🌍 Country", df['Country'].unique())
-selected_plants = st.sidebar.multiselect("🏣 Plant Type", df['Plant Type'].unique())
+# Sidebar filters
+st.sidebar.title("Filters")
+filters = {}
+for col in columns_to_string:
+    options = df[col].unique().tolist()
+    selection = st.sidebar.multiselect(f"Select {col}", options, default=options)
+    filters[col] = selection
 
+# Filter the dataframe
 filtered_df = df.copy()
-if selected_months:
-    filtered_df = filtered_df[filtered_df['Month-Year'].dt.strftime('%b-%Y').isin(selected_months)]
-if selected_deal_managers:
-    filtered_df = filtered_df[filtered_df['Deal Manager'].isin(selected_deal_managers)]
-if selected_customers:
-    filtered_df = filtered_df[filtered_df['Customer'].isin(selected_customers)]
-if selected_countries:
-    filtered_df = filtered_df[filtered_df['Country'].isin(selected_countries)]
-if selected_plants:
-    filtered_df = filtered_df[filtered_df['Plant Type'].isin(selected_plants)]
+for col, selected_vals in filters.items():
+    filtered_df = filtered_df[filtered_df[col].isin(selected_vals)]
 
-# 5. KPI Summary
-st.subheader("📊 Performance Summary")
-kpi1, kpi2, kpi3 = st.columns(3)
-kpi1.metric("💰 Total Achieved Revenue", f"${filtered_df['Achieved Revenue'].sum():,.0f}")
-kpi2.metric("📦 Total Achieved Orders", f"${filtered_df['Achieved Orders'].sum():,.0f}")
-achieved_gm_percent = safe_divide(
-    filtered_df['Achieved Gross Margin'].sum(),
-    filtered_df['Achieved Revenue'].sum()
-)
-kpi3.metric("📈 Achieved Gross Margin %", f"{achieved_gm_percent:.1f}%")
+# Toggle for Grouped or Stacked Bar
+chart_mode = st.radio("Chart Mode", ['Grouped', 'Stacked'], horizontal=True)
 
-# 6. Grouped Aggregation
-group_by = st.selectbox("📁 Group Data By", ['Month-Year', 'Deal Manager', 'Customer', 'Country', 'Plant Type'])
+# Gross Margin Toggle
+gm_view = st.radio("Gross Margin View", ['By Value', 'By %'], horizontal=True)
 
-agg = {
-    'Committed Orders': 'sum',
+# Define chart drawing functions
+def draw_bar_chart(df, y1, y2, title, yaxis_title):
+    df = df.groupby('Financial Year')[[y1, y2]].sum().reset_index()
+    df_melted = df.melt(id_vars='Financial Year', value_vars=[y1, y2], var_name='Metric', value_name='Value')
+    barmode = 'group' if chart_mode == 'Grouped' else 'stack'
+    fig = px.bar(df_melted, x='Financial Year', y='Value', color='Metric', barmode=barmode, title=title)
+    fig.update_layout(yaxis_title=yaxis_title)
+    return fig
+
+# Orders Comparison
+st.subheader("📦 Orders Comparison")
+st.plotly_chart(draw_bar_chart(filtered_df, 'Committed Orders', 'Achieved Orders', "Orders Comparison", "Orders"))
+
+# Revenue Comparison
+st.subheader("💰 Revenue Comparison")
+st.plotly_chart(draw_bar_chart(filtered_df, 'Committed Revenue', 'Achieved Revenue', "Revenue Comparison", "Revenue"))
+
+# Gross Margin Comparison
+st.subheader("📈 Gross Margin Comparison")
+if gm_view == 'By Value':
+    st.plotly_chart(draw_bar_chart(filtered_df, 'Committed Gross Margin Value', 'Achieved Gross Margin Value', "Gross Margin (Value)", "Gross Margin Value"))
+else:
+    st.plotly_chart(draw_bar_chart(filtered_df, 'Committed Gross Margin %', 'Achieved Gross Margin %', "Gross Margin (%)", "Gross Margin %"))
+
+# Delta Summary Table
+st.subheader("📊 Delta Summary Table (Achieved – Committed)")
+summary = filtered_df.groupby('Financial Year').agg({
     'Achieved Orders': 'sum',
-    'Committed Revenue': 'sum',
+    'Committed Orders': 'sum',
     'Achieved Revenue': 'sum',
-    'Committed Gross Margin': 'sum',
-    'Achieved Gross Margin': 'sum'
-}
-grouped = filtered_df.groupby(group_by).agg(agg).reset_index()
+    'Committed Revenue': 'sum',
+    'Achieved Gross Margin Value': 'sum',
+    'Committed Gross Margin Value': 'sum',
+    'Achieved Gross Margin %': 'mean',
+    'Committed Gross Margin %': 'mean'
+}).reset_index()
 
-if group_by == 'Month-Year':
-    grouped[group_by] = pd.to_datetime(grouped[group_by], errors='coerce')
-    grouped = grouped.sort_values(by=group_by)
-    grouped[group_by] = grouped[group_by].dt.strftime('%b-%Y')
+summary['Delta Orders'] = summary['Achieved Orders'] - summary['Committed Orders']
+summary['Delta Revenue'] = summary['Achieved Revenue'] - summary['Committed Revenue']
+summary['Delta GM Value'] = summary['Achieved Gross Margin Value'] - summary['Committed Gross Margin Value']
+summary['Delta GM %'] = summary['Achieved Gross Margin %'] - summary['Committed Gross Margin %']
 
-grouped['Revenue Conversion %'] = grouped.apply(lambda x: safe_divide(x['Achieved Revenue'], x['Committed Revenue']), axis=1)
-grouped['Orders Conversion %'] = grouped.apply(lambda x: safe_divide(x['Achieved Orders'], x['Committed Orders']), axis=1)
-grouped['GM Conversion %'] = grouped.apply(lambda x: safe_divide(x['Achieved Gross Margin'], x['Committed Gross Margin']), axis=1)
-grouped['Achieved GM %'] = grouped.apply(lambda x: safe_divide(x['Achieved Gross Margin'], x['Achieved Revenue']), axis=1)
-
-# 7. Table Display
-st.subheader(f"📟 Detailed Performance by {group_by}")
-styled = grouped.style.format({
-    'Committed Revenue': '{:,.0f}',
-    'Achieved Revenue': '{:,.0f}',
-    'Revenue Conversion %': '{:.1f}%',
-    'Committed Orders': '{:,.0f}',
-    'Achieved Orders': '{:,.0f}',
-    'Orders Conversion %': '{:.1f}%',
-    'Committed Gross Margin': '{:,.0f}',
-    'Achieved Gross Margin': '{:,.0f}',
-    'GM Conversion %': '{:.1f}%',
-    'Achieved GM %': '{:.1f}%'
-}).map(
-    lambda val: 'color: green' if isinstance(val, (int, float)) and val >= 100 else 'color: red',
-    subset=['Revenue Conversion %', 'Orders Conversion %', 'GM Conversion %']
-)
-st.dataframe(styled, use_container_width=True)
-
-# 8. Download Excel Option
-def convert_df_to_excel(df):
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False, sheet_name='Dashboard')
-    return output.getvalue()
-
-excel_data = convert_df_to_excel(grouped)
-st.download_button(
-    label="⬇️ Download Table as Excel",
-    data=excel_data,
-    file_name="worldref_sales_dashboard.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
-
-# 9. Branded Bar Chart Function
-def plot_chart(title, x, y, df, colors, ylabel):
-    fig = px.bar(df, x=x, y=y, barmode="group", text_auto='.2s', color_discrete_sequence=colors)
-    fig.update_layout(
-        title=title,
-        xaxis_title=x,
-        yaxis_title=ylabel,
-        xaxis_tickangle=45,
-        plot_bgcolor='#1e1e1e',
-        paper_bgcolor='#1e1e1e',
-        font=dict(color='white'),
-        title_font=dict(size=18, color='white'),
-        legend=dict(font=dict(size=12, color='white')),
-        xaxis=dict(color='white', gridcolor='gray'),
-        yaxis=dict(color='white', gridcolor='gray')
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-# 10. Main Visualizations
-st.subheader(f"💰 Revenue Comparison by {group_by}")
-plot_chart("Revenue Comparison", group_by, ['Committed Revenue', 'Achieved Revenue'], grouped, ['#005B96', '#FFC20E'], "Revenue (USD)")
-
-st.subheader(f"📦 Orders Comparison by {group_by}")
-plot_chart("Orders Comparison", group_by, ['Committed Orders', 'Achieved Orders'], grouped, ['#5C4B99', '#00B159'], "Orders (USD)")
-
-st.subheader(f"📈 Gross Margin % by {group_by}")
-plot_chart("Achieved Gross Margin %", group_by, ['Achieved GM %'], grouped, ['#17becf'], "Gross Margin %")
-
-# 11. NEW: GM% by Multiple Dimensions
-st.subheader("🧩 Gross Margin % by Multiple Dimensions")
-dimension_cols = st.multiselect("📊 Choose Dimensions (e.g., Country, Plant Type)", ['Country', 'Plant Type', 'Deal Manager', 'Customer'])
-
-if dimension_cols:
-    combo_group = filtered_df.groupby(dimension_cols).agg({
-        'Achieved Gross Margin': 'sum',
-        'Achieved Revenue': 'sum'
-    }).reset_index()
-    combo_group['Achieved GM %'] = combo_group.apply(
-        lambda x: safe_divide(x['Achieved Gross Margin'], x['Achieved Revenue']), axis=1
-    )
-
-    combo_group['Group Label'] = combo_group[dimension_cols].astype(str).agg(' | '.join, axis=1)
-
-    plot_chart(
-        title=f"Achieved Gross Margin % by {' + '.join(dimension_cols)}",
-        x='Group Label',
-        y=['Achieved GM %'],
-        df=combo_group,
-        colors=['#F76C6C'],
-        ylabel='Gross Margin %'
-    )
+delta_table = summary[['Financial Year', 'Delta Orders', 'Delta Revenue', 'Delta GM Value', 'Delta GM %']]
+st.dataframe(delta_table.style.format({
+    'Delta Orders': '{:,.0f}',
+    'Delta Revenue': '{:,.0f}',
+    'Delta GM Value': '{:,.0f}',
+    'Delta GM %': '{:.2f}%'
+}))
