@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from io import BytesIO
 
@@ -74,7 +75,7 @@ if page == "📊 Orders Dashboard":
         axis=1
     )
 
-    #fig_orders = make_subplots(specs=[[{"secondary_y": True}]])
+    fig_orders = make_subplots(specs=[[{"secondary_y": True}]])
 
     # Bar for Committed Orders
     fig_orders.add_trace(
