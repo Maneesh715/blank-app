@@ -230,11 +230,21 @@ if page == "📊 Orders Dashboard":
     excel_data = convert_df(filtered_df, to_excel=True)
     csv_data = convert_df(filtered_df, to_excel=False)
 
-    colx1, colx2 = st.columns(2)
-    with colx1:
-        st.download_button("📥 Download as Excel", data=excel_data, file_name="filtered_orders.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-    with colx2:
-        st.download_button("📥 Download as CSV", data=csv_data, file_name="filtered_orders.csv", mime="text/csv")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.download_button(
+            label="📥 Download as Excel",
+            data=excel_data,
+            file_name="filtered_orders_data.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    with col2:
+        st.download_button(
+            label="📥 Download as CSV",
+            data=csv_data,
+            file_name="filtered_orders_data.csv",
+            mime="text/csv"
+        )
 
 else:
     st.info("🔄 Sheet2 Dashboard coming soon.")
