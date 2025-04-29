@@ -175,30 +175,6 @@ if page == "📊 Orders Dashboard":
     )
     st.plotly_chart(fig_heatmap, use_container_width=True)
 
-    # ADD THIS AFTER HEATMAP SECTION (Conversion Rate Trendline)
-    st.subheader("📈 Conversion Rate Over Time")
-    conversion_trend = (
-        filtered_df.groupby(filtered_df["Month-Year"].dt.to_period("M"))[["Committed Orders", "Achieved Orders"]]
-        .sum()
-        .reset_index()
-    )
-    conversion_trend["Month-Year"] = conversion_trend["Month-Year"].dt.strftime("%b'%y")
-    conversion_trend["Conversion Rate (%)"] = conversion_trend.apply(
-        lambda row: (row["Achieved Orders"] / row["Committed Orders"] * 100) if row["Committed Orders"] else 0,
-        axis=1
-    )
-
-    fig_conversion = px.line(
-        conversion_trend,
-        x="Month-Year",
-        y="Conversion Rate (%)",
-        title="📈 Conversion Rate Trend Over Time",
-        markers=True
-    )
-    fig_conversion.update_traces(line_color="#e76f51")
-    fig_conversion.update_layout(yaxis_title="Conversion Rate (%)", xaxis_title="Month-Year", template="plotly_white")
-    st.plotly_chart(fig_conversion, use_container_width=True)
-
     # --- REGION-WISE ACHIEVED ORDERS MAP ---
     st.subheader("🗺️ Region-wise Achieved Orders")
     country_data = filtered_df.groupby('Country')['Achieved Orders'].sum().reset_index()
