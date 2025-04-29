@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from io import BytesIO
 
 # --- PAGE CONFIG ---
@@ -17,7 +18,7 @@ CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:cs
 @st.cache_data
 def load_data(url):
     df = pd.read_csv(url)
-    df.columns = df.columns.str.strip()
+    df.columns = df.columns.str.strip()  # Remove extra spaces in column names
     return df
 
 df = load_data(CSV_URL)
@@ -25,18 +26,28 @@ df = load_data(CSV_URL)
 # --- CLEAN & PROCESS DATA ---
 df["Month-Year"] = pd.to_datetime(df["Month-Year"], format="%b %Y")
 df["New Customer"] = df["New Customer"].fillna(0).astype(int)
-df["Committed Orders"] = pd.to_numeric(df["Committed Orders"], errors='coerce')
-df["Achieved Orders"] = pd.to_numeric(df["Achieved Orders"], errors='coerce')
-df["Conversion Rate (%)"] = (df["Achieved Orders"] / df["Committed Orders"]) * 100
+df["Committed Orders"] = pd.to_numeric(df["Committed Orders"], errors='coerce').fillna(0)
+df["Achieved Orders"] = pd.to_numeric(df["Achieved Orders"], errors='coerce').fillna(0)
+
+# Avoid division by zero
+df["Conversion Rate (%)"] = df.apply(
+    lambda row: (row["Achieved Orders"] / row["Committed Orders"] * 100) if row["Committed Orders"] else 0,
+    axis=1
+)
 
 # --- FILTER SIDEBAR ---
 st.sidebar.header("🔎 Filters")
 
-deal_managers = st.sidebar.multiselect("Select Deal Manager(s):", options=sorted(df["Deal Manager"].dropna().unique()), default=None)
-countries = st.sidebar.multiselect("Select Country(ies):", options=sorted(df["Country"].dropna().unique()), default=None)
-plants = st.sidebar.multiselect("Select Plant Type(s):", options=sorted(df["Plant Type"].dropna().unique()), default=None)
-customers = st.sidebar.multiselect("Select Customer(s):", options=sorted(df["Customer"].dropna().unique()), default=None)
+deal_managers = st.sidebar.multiselect("Select Deal Manager(s):", options=sorted(df["Deal Manager"].dropna().unique()))
+countries = st.sidebar.multiselect("Select Country(ies):", options=sorted(df["Country"].dropna().unique()))
+plants = st.sidebar.multiselect("Select Plant Type(s):", options=sorted(df["Plant Type"].dropna().unique()))
+customers = st.sidebar.multiselect("Select Customer(s):", options=sorted(df["Customer"].dropna().unique()))
 
+# Reset filters button
+if st.sidebar.button("Reset Filters"):
+    st.experimental_rerun()
+
+# Apply filters
 filtered_df = df.copy()
 if deal_managers:
     filtered_df = filtered_df[filtered_df["Deal Manager"].isin(deal_managers)]
@@ -50,7 +61,7 @@ if customers:
 # --- SUMMARY METRICS ---
 total_committed = filtered_df["Committed Orders"].sum()
 total_achieved = filtered_df["Achieved Orders"].sum()
-conversion_rate = (total_achieved / total_committed) * 100 if total_committed else 0
+conversion_rate = (total_achieved / total_committed * 100) if total_committed else 0
 new_customers = filtered_df["New Customer"].sum()
 
 col1, col2, col3, col4 = st.columns(4)
@@ -60,20 +71,36 @@ col3.metric("🎯 Conversion Rate", f"{conversion_rate:.2f}%")
 col4.metric("🆕 New Customers", f"{new_customers}")
 
 # --- ORDERS COMPARISON CHART (TIME SERIES) ---
-import plotly.graph_objects as go
+@st.cache_data
+def get_monthly_summary(df):
+    monthly_summary = df.groupby(df["Month-Year"].dt.to_period("M"))[["Committed Orders", "Achieved Orders"]].sum().reset_index()
+    monthly_summary["Month-Year"] = monthly_summary["Month-Year"].dt.to_timestamp()
+    monthly_summary = monthly_summary.sort_values("Month-Year")  # Ensure proper sorting
+    monthly_summary["Month-Year_Label"] = monthly_summary["Month-Year"].dt.strftime("%b'%y")
+    
+    # Calculate Conversion Rate
+    monthly_summary["Conversion Rate (%)"] = (
+        monthly_summary["Achieved Orders"] / monthly_summary["Committed Orders"].replace(0, pd.NA)
+    ) * 100
 
-# Prepare data
-monthly_summary = (
-    filtered_df.groupby(filtered_df["Month-Year"].dt.to_period("M"))[["Committed Orders", "Achieved Orders"]]
-    .sum()
-    .reset_index()
-)
-monthly_summary["Month-Year"] = monthly_summary["Month-Year"].dt.strftime("%b'%y")
+    return monthly_summary
 
-# Create bar traces
+monthly_summary = get_monthly_summary(filtered_df)
+
+# Find the best conversion month
+if not monthly_summary.empty:
+    best_month = monthly_summary.loc[monthly_summary["Conversion Rate (%)"].idxmax(), "Month-Year_Label"]
+else:
+    best_month = "N/A"
+
+col4.metric("🔥 Best Conversion Month", best_month)
+
+# Create bar & line chart
 fig = go.Figure()
+
+# Bar chart for Orders
 fig.add_trace(go.Bar(
-    x=monthly_summary["Month-Year"],
+    x=monthly_summary["Month-Year_Label"],
     y=monthly_summary["Committed Orders"],
     name="Committed Orders",
     marker_color="#8ecae6",
@@ -81,7 +108,7 @@ fig.add_trace(go.Bar(
     textposition='outside'
 ))
 fig.add_trace(go.Bar(
-    x=monthly_summary["Month-Year"],
+    x=monthly_summary["Month-Year_Label"],
     y=monthly_summary["Achieved Orders"],
     name="Achieved Orders",
     marker_color="#219ebc",
@@ -89,11 +116,29 @@ fig.add_trace(go.Bar(
     textposition='outside'
 ))
 
+# Line chart for Conversion Rate
+fig.add_trace(go.Scatter(
+    x=monthly_summary["Month-Year_Label"],
+    y=monthly_summary["Conversion Rate (%)"],
+    name="Conversion Rate (%)",
+    mode="lines+markers",
+    yaxis="y2",
+    line=dict(color="orange", dash="dot"),
+    marker=dict(size=6),
+))
+
 # Update layout
 fig.update_layout(
-    title="📊 Monthly Orders Comparison (Committed vs Achieved)",
+    title="📊 Monthly Orders Comparison (Committed vs Achieved) & Conversion Rate",
     xaxis_title="Month-Year",
     yaxis_title="Orders (USD)",
+    yaxis2=dict(
+        title="Conversion Rate (%)",
+        overlaying="y",
+        side="right",
+        tickformat=".0f",
+        showgrid=False
+    ),
     barmode='group',
     bargap=0.25,
     template="plotly_white",
