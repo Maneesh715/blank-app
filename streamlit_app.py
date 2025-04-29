@@ -133,7 +133,7 @@ if page == "📊 Orders Dashboard":
     )
     st.plotly_chart(fig_heatmap, use_container_width=True)
 
-    st.info("🖱️ Click a heatmap cell to drill down — full interactivity can be added via `plotly_click` callbacks.")
+    #st.info("🖱️ Click a heatmap cell to drill down — full interactivity can be added via `plotly_click` callbacks.")
 
     # --- Map ---
     st.subheader("🗺️ Region-wise Achieved Orders")
