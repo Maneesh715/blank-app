@@ -62,18 +62,74 @@ if page == "📊 Orders Dashboard":
     col4.metric("🆕 New Customers", f"{new_customers}")
 
     # --- ORDERS COMPARISON ---
+    # --- COMBINED MONTHLY ORDERS COMPARISON + CONVERSION RATE ---
     monthly_summary = (
         filtered_df.groupby(filtered_df["Month-Year"].dt.to_period("M"))[["Committed Orders", "Achieved Orders"]]
         .sum()
         .reset_index()
     )
     monthly_summary["Month-Year"] = monthly_summary["Month-Year"].dt.strftime("%b'%y")
+    monthly_summary["Conversion Rate (%)"] = monthly_summary.apply(
+        lambda row: (row["Achieved Orders"] / row["Committed Orders"] * 100) if row["Committed Orders"] else 0,
+        axis=1
+    )
 
-    fig_orders = go.Figure()
-    fig_orders.add_trace(go.Bar(x=monthly_summary["Month-Year"], y=monthly_summary["Committed Orders"], name="Committed Orders", marker_color="#66c2a5", text=monthly_summary["Committed Orders"], textposition='outside'))
-    fig_orders.add_trace(go.Bar(x=monthly_summary["Month-Year"], y=monthly_summary["Achieved Orders"], name="Achieved Orders", marker_color="#1d3557", text=monthly_summary["Achieved Orders"], textposition='outside'))
-    fig_orders.update_layout(title="📊 Monthly Orders Comparison", xaxis_title="Month-Year", yaxis_title="Orders (USD)", barmode='group', template="plotly_white", legend=dict(orientation="h", y=1.15, x=0.5, xanchor="center"))
+    fig_orders = make_subplots(specs=[[{"secondary_y": True}]])
+
+    # Bar for Committed Orders
+    fig_orders.add_trace(
+        go.Bar(
+            x=monthly_summary["Month-Year"],
+            y=monthly_summary["Committed Orders"],
+            name="Committed Orders",
+            marker_color="#66c2a5",
+            text=monthly_summary["Committed Orders"],
+            textposition='outside'
+        ),
+        secondary_y=False
+    )
+
+    # Bar for Achieved Orders
+    fig_orders.add_trace(
+        go.Bar(
+            x=monthly_summary["Month-Year"],
+            y=monthly_summary["Achieved Orders"],
+            name="Achieved Orders",
+            marker_color="#1d3557",
+            text=monthly_summary["Achieved Orders"],
+            textposition='outside'
+        ),
+        secondary_y=False
+    )
+
+    # Line for Conversion Rate (%)
+    fig_orders.add_trace(
+        go.Scatter(
+            x=monthly_summary["Month-Year"],
+            y=monthly_summary["Conversion Rate (%)"],
+            name="Conversion Rate (%)",
+            mode='lines+markers',
+            line=dict(color="#e76f51", width=3),
+            marker=dict(size=6)
+        ),
+        secondary_y=True
+    )
+
+    fig_orders.update_layout(
+        title="📊 Monthly Orders & Conversion Rate",
+        xaxis_title="Month-Year",
+        yaxis_title="Orders (USD)",
+        legend=dict(orientation="h", y=1.15, x=0.5, xanchor="center"),
+        template="plotly_white",
+        barmode='group',
+        height=500
+    )
+
+    fig_orders.update_yaxes(title_text="Orders (USD)", secondary_y=False)
+    fig_orders.update_yaxes(title_text="Conversion Rate (%)", secondary_y=True)
+
     st.plotly_chart(fig_orders, use_container_width=True)
+
 
     # --- CATEGORY-WISE & MANAGER-WISE TREEMAP ---
     st.subheader("📘 Category-wise & Manager-wise Breakdown (Treemap)")
