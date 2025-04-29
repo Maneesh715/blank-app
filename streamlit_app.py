@@ -74,7 +74,7 @@ if page == "📊 Orders Dashboard":
         axis=1
     )
 
-    fig_orders = make_subplots(specs=[[{"secondary_y": True}]])
+    #fig_orders = make_subplots(specs=[[{"secondary_y": True}]])
 
     # Bar for Committed Orders
     fig_orders.add_trace(
