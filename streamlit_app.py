@@ -7,7 +7,7 @@ from io import BytesIO
 st.set_page_config(page_title="Orders Dashboard", layout="wide")
 
 # --- TITLE ---
-st.title("📊 Orders Comparison Dashboard (Committed vs Achieved)")
+st.title("📊 Worldref Sales Dashboard")
 
 # --- LOAD DATA FROM GOOGLE SHEET (as CSV export) ---
 SHEET_ID = "1VGd-4Ycj8mz8ZvDV2chLt4bG8DMjQ64fSLADkmXLsPo"
