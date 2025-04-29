@@ -60,23 +60,49 @@ col3.metric("🎯 Conversion Rate", f"{conversion_rate:.2f}%")
 col4.metric("🆕 New Customers", f"{new_customers}")
 
 # --- ORDERS COMPARISON CHART (TIME SERIES) ---
+import plotly.graph_objects as go
+
+# Prepare data
 monthly_summary = (
     filtered_df.groupby(filtered_df["Month-Year"].dt.to_period("M"))[["Committed Orders", "Achieved Orders"]]
     .sum()
     .reset_index()
 )
-monthly_summary["Month-Year"] = monthly_summary["Month-Year"].dt.strftime("%b'%y")  # Format: Jan'25
+monthly_summary["Month-Year"] = monthly_summary["Month-Year"].dt.strftime("%b'%y")
 
-fig = px.bar(
-    monthly_summary.melt(id_vars="Month-Year", value_vars=["Committed Orders", "Achieved Orders"]),
-    x="Month-Year",
-    y="value",
-    color="variable",
-    barmode="group",
-    labels={"value": "USD ($)", "Month-Year": "Month"},
-    title="📆 Monthly Orders: Committed vs Achieved"
+# Create bar traces
+fig = go.Figure()
+fig.add_trace(go.Bar(
+    x=monthly_summary["Month-Year"],
+    y=monthly_summary["Committed Orders"],
+    name="Committed Orders",
+    marker_color="#8ecae6",
+    text=monthly_summary["Committed Orders"],
+    textposition='outside'
+))
+fig.add_trace(go.Bar(
+    x=monthly_summary["Month-Year"],
+    y=monthly_summary["Achieved Orders"],
+    name="Achieved Orders",
+    marker_color="#219ebc",
+    text=monthly_summary["Achieved Orders"],
+    textposition='outside'
+))
+
+# Update layout
+fig.update_layout(
+    title="📊 Monthly Orders Comparison (Committed vs Achieved)",
+    xaxis_title="Month",
+    yaxis_title="USD ($)",
+    barmode='group',
+    bargap=0.25,
+    template="plotly_white",
+    legend=dict(title="", orientation="h", y=1.15, x=0.5, xanchor="center"),
+    font=dict(family="Segoe UI, sans-serif", size=14, color="#333"),
+    height=500
 )
-fig.update_xaxes(type='category')  # Keep months evenly spaced
+fig.update_traces(marker_line_width=0.5, marker_line_color="gray")
+
 st.plotly_chart(fig, use_container_width=True)
 
 # --- DOWNLOAD DATA ---
