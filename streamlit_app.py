@@ -95,20 +95,27 @@ if page == "📊 Orders Dashboard":
     fig_treemap.update_traces(root_color="lightgrey")
     st.plotly_chart(fig_treemap, use_container_width=True)
 
-    # --- HEATMAP OF ACHIEVED ORDERS ---
-    st.subheader("🔥 Achieved Orders Heatmap (Manager × Month)")
+    # --- HEATMAP WITH AVERAGES ---
+    st.subheader("🔥 Achieved Orders Heatmap (Manager × Month) with Averages")
     heatmap_data = filtered_df.groupby(['Deal Manager', filtered_df['Month-Year'].dt.strftime('%b %Y')])['Achieved Orders'].sum().reset_index()
     heatmap_pivot = heatmap_data.pivot(index='Deal Manager', columns='Month-Year', values='Achieved Orders').fillna(0)
+
+    # Add row and column averages
+    heatmap_pivot['Row Avg'] = heatmap_pivot.mean(axis=1)
+    row_avg = heatmap_pivot['Row Avg']
+    heatmap_pivot = heatmap_pivot.drop(columns='Row Avg')
+    heatmap_pivot.loc['Col Avg'] = heatmap_pivot.mean()
 
     fig_heatmap = px.imshow(
         heatmap_pivot,
         labels=dict(x="Month-Year", y="Deal Manager", color="Achieved Orders"),
         color_continuous_scale='Turbo',
         aspect="auto",
-        text_auto=True
+        text_auto=".2s"
     )
-    fig_heatmap.update_layout(title='Achieved Orders by Manager & Month', xaxis_side="top")
+    fig_heatmap.update_layout(title='Achieved Orders by Manager & Month with Averages', xaxis_side="top")
     st.plotly_chart(fig_heatmap, use_container_width=True)
+
 
     # --- REGION-WISE ACHIEVED ORDERS MAP ---
     st.subheader("🗺️ Region-wise Achieved Orders")
