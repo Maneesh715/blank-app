@@ -65,7 +65,7 @@ monthly_summary = (
     .sum()
     .reset_index()
 )
-monthly_summary["Month-Year"] = monthly_summary["Month-Year"].astype(str)
+monthly_summary["Month-Year"] = monthly_summary["Month-Year"].dt.strftime("%b'%y")  # Format: Jan'25
 
 fig = px.bar(
     monthly_summary.melt(id_vars="Month-Year", value_vars=["Committed Orders", "Achieved Orders"]),
@@ -76,6 +76,7 @@ fig = px.bar(
     labels={"value": "USD ($)", "Month-Year": "Month"},
     title="📆 Monthly Orders: Committed vs Achieved"
 )
+fig.update_xaxes(type='category')  # Keep months evenly spaced
 st.plotly_chart(fig, use_container_width=True)
 
 # --- DOWNLOAD DATA ---
