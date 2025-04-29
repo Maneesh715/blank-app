@@ -5,10 +5,14 @@ import plotly.graph_objects as go
 from io import BytesIO
 
 # --- PAGE CONFIG ---
-st.set_page_config(page_title="Orders Dashboard", layout="wide")
-st.title("📊 Worldref Sales Dashboard")
+st.set_page_config(page_title="Worldref Dashboard", layout="wide")
 
-# --- LOAD DATA FROM GOOGLE SHEET (as CSV export) ---
+# --- NAVIGATION MENU ---
+st.sidebar.title("📁 Navigation")
+page = st.sidebar.selectbox("Go to", ["📊 Orders Dashboard", "📈 Sheet2 Dashboard"])
+
+if page == "📊 Orders Dashboard":
+    # --- LOAD DATA FROM GOOGLE SHEET (as CSV export) ---
 SHEET_ID = "1VGd-4Ycj8mz8ZvDV2chLt4bG8DMjQ64fSLADkmXLsPo"
 SHEET_NAME = "Sheet1"
 CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
@@ -143,3 +147,6 @@ with colx1:
     st.download_button("📥 Download as Excel", data=excel_data, file_name="filtered_orders.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 with colx2:
     st.download_button("📥 Download as CSV", data=csv_data, file_name="filtered_orders.csv", mime="text/csv")
+
+
+
