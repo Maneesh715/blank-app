@@ -109,7 +109,7 @@ if page == "📊 Orders Dashboard":
     fig_treemap.update_traces(root_color="lightgrey")
     st.plotly_chart(fig_treemap, use_container_width=True)
 
-    selected_treemap = st.plotly_chart(fig_treemap, use_container_width=True)
+    #selected_treemap = st.plotly_chart(fig_treemap, use_container_width=True)
     #st.info("🖱️ Click a Treemap section to drill down — feature for future interactivity.")
 
     # --- Heatmap with Drill-down ---
