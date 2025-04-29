@@ -92,8 +92,8 @@ fig.add_trace(go.Bar(
 # Update layout
 fig.update_layout(
     title="📊 Monthly Orders Comparison (Committed vs Achieved)",
-    xaxis_title="Month",
-    yaxis_title="USD ($)",
+    xaxis_title="Month-Year",
+    yaxis_title="Orders (USD)",
     barmode='group',
     bargap=0.25,
     template="plotly_white",
