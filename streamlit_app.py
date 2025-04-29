@@ -12,7 +12,7 @@ st.sidebar.title("📁 Navigation")
 page = st.sidebar.selectbox("Go to", ["📊 Orders Dashboard", "📈 Sheet2 Dashboard"])
 
 if page == "📊 Orders Dashboard":
-    # --- LOAD DATA ---
+    # --- LOAD DATA FROM GOOGLE SHEET (as CSV export) ---
     SHEET_ID = "1VGd-4Ycj8mz8ZvDV2chLt4bG8DMjQ64fSLADkmXLsPo"
     SHEET_NAME = "Sheet1"
     CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
@@ -25,7 +25,7 @@ if page == "📊 Orders Dashboard":
 
     df = load_data(CSV_URL)
 
-    # --- DATA CLEANING ---
+    # --- DATA CLEANING & PROCESSING ---
     df["Month-Year"] = pd.to_datetime(df["Month-Year"], format="%b %Y")
     df["New Customer"] = df["New Customer"].fillna(0).astype(int)
     df["Committed Orders"] = pd.to_numeric(df["Committed Orders"], errors='coerce').fillna(0)
@@ -34,19 +34,12 @@ if page == "📊 Orders Dashboard":
 
     # --- SIDEBAR FILTERS ---
     st.sidebar.header("🔎 Filters")
-    deal_managers = st.sidebar.multiselect("Select Deal Manager(s):", sorted(df["Deal Manager"].dropna().unique()))
-    countries = st.sidebar.multiselect("Select Country(ies):", sorted(df["Country"].dropna().unique()))
-    plants = st.sidebar.multiselect("Select Plant Type(s):", sorted(df["Plant Type"].dropna().unique()))
-    customers = st.sidebar.multiselect("Select Customer(s):", sorted(df["Customer"].dropna().unique()))
+    deal_managers = st.sidebar.multiselect("Select Deal Manager(s):", options=sorted(df["Deal Manager"].dropna().unique()))
+    countries = st.sidebar.multiselect("Select Country(ies):", options=sorted(df["Country"].dropna().unique()))
+    plants = st.sidebar.multiselect("Select Plant Type(s):", options=sorted(df["Plant Type"].dropna().unique()))
+    customers = st.sidebar.multiselect("Select Customer(s):", options=sorted(df["Customer"].dropna().unique()))
 
-    # --- DATE RANGE SLIDER ---
-    min_date = df["Month-Year"].min()
-    max_date = df["Month-Year"].max()
-    date_range = st.sidebar.slider("Select Date Range:", min_value=min_date, max_value=max_date, value=(min_date, max_date), format="MMM YYYY")
-
-    filtered_df = df[
-        (df["Month-Year"] >= date_range[0]) & (df["Month-Year"] <= date_range[1])
-    ]
+    filtered_df = df.copy()
     if deal_managers:
         filtered_df = filtered_df[filtered_df["Deal Manager"].isin(deal_managers)]
     if countries:
@@ -56,7 +49,7 @@ if page == "📊 Orders Dashboard":
     if customers:
         filtered_df = filtered_df[filtered_df["Customer"].isin(customers)]
 
-    # --- METRICS ---
+    # --- SUMMARY METRICS ---
     total_committed = filtered_df["Committed Orders"].sum()
     total_achieved = filtered_df["Achieved Orders"].sum()
     conversion_rate = (total_achieved / total_committed) * 100 if total_committed else 0
@@ -68,7 +61,7 @@ if page == "📊 Orders Dashboard":
     col3.metric("🎯 Conversion Rate", f"{conversion_rate:.2f}%")
     col4.metric("🆕 New Customers", f"{new_customers}")
 
-    # --- ORDERS COMPARISON CHART ---
+    # --- ORDERS COMPARISON ---
     monthly_summary = (
         filtered_df.groupby(filtered_df["Month-Year"].dt.to_period("M"))[["Committed Orders", "Achieved Orders"]]
         .sum()
@@ -82,26 +75,7 @@ if page == "📊 Orders Dashboard":
     fig_orders.update_layout(title="📊 Monthly Orders Comparison", xaxis_title="Month-Year", yaxis_title="Orders (USD)", barmode='group', template="plotly_white", legend=dict(orientation="h", y=1.15, x=0.5, xanchor="center"))
     st.plotly_chart(fig_orders, use_container_width=True)
 
-    # --- CONVERSION RATE TRENDLINE ---
-    st.subheader("📈 Conversion Rate Trend Over Time")
-    conversion_trend = (
-        filtered_df.groupby(filtered_df["Month-Year"].dt.to_period("M"))
-        .apply(lambda x: x["Achieved Orders"].sum() / x["Committed Orders"].sum() * 100 if x["Committed Orders"].sum() else 0)
-        .reset_index(name="Conversion Rate (%)")
-    )
-    conversion_trend["Month-Year"] = conversion_trend["Month-Year"].dt.strftime("%b'%y")
-
-    fig_conversion = px.line(
-        conversion_trend,
-        x="Month-Year",
-        y="Conversion Rate (%)",
-        markers=True,
-        title="📈 Conversion Rate (%) Trendline",
-        template="plotly_white"
-    )
-    st.plotly_chart(fig_conversion, use_container_width=True)
-
-    # --- TREEMAP ---
+    # --- CATEGORY-WISE & MANAGER-WISE TREEMAP ---
     st.subheader("📘 Category-wise & Manager-wise Breakdown (Treemap)")
     st.markdown("""
     This treemap shows:
@@ -115,20 +89,16 @@ if page == "📊 Orders Dashboard":
         values='Achieved Orders',
         color='Achieved Orders',
         color_continuous_scale='Viridis',
+        title='Category-wise & Manager-wise Breakdown',
         hover_data={'Achieved Orders': ':,.0f'}
     )
     fig_treemap.update_traces(root_color="lightgrey")
     st.plotly_chart(fig_treemap, use_container_width=True)
 
-    # --- HEATMAP WITH AVERAGES ---
-    st.subheader("🔥 Achieved Orders Heatmap (Manager × Month) with Averages")
+    # --- HEATMAP OF ACHIEVED ORDERS ---
+    st.subheader("🔥 Achieved Orders Heatmap (Manager × Month)")
     heatmap_data = filtered_df.groupby(['Deal Manager', filtered_df['Month-Year'].dt.strftime('%b %Y')])['Achieved Orders'].sum().reset_index()
     heatmap_pivot = heatmap_data.pivot(index='Deal Manager', columns='Month-Year', values='Achieved Orders').fillna(0)
-
-    # Add row/column averages
-    heatmap_pivot.loc['Average'] = heatmap_pivot.mean()
-    avg_row = heatmap_pivot.mean(axis=1)
-    heatmap_pivot['Average'] = avg_row
 
     fig_heatmap = px.imshow(
         heatmap_pivot,
@@ -137,12 +107,13 @@ if page == "📊 Orders Dashboard":
         aspect="auto",
         text_auto=True
     )
-    fig_heatmap.update_layout(title='Achieved Orders by Manager & Month (with Averages)', xaxis_side="top")
+    fig_heatmap.update_layout(title='Achieved Orders by Manager & Month', xaxis_side="top")
     st.plotly_chart(fig_heatmap, use_container_width=True)
 
-    # --- CHOROPLETH ---
+    # --- REGION-WISE ACHIEVED ORDERS MAP ---
     st.subheader("🗺️ Region-wise Achieved Orders")
     country_data = filtered_df.groupby('Country')['Achieved Orders'].sum().reset_index()
+
     fig_choropleth = px.choropleth(
         country_data,
         locations='Country',
