@@ -8,7 +8,7 @@ from io import BytesIO
 st.set_page_config(page_title="Worldref Dashboard", layout="wide")
 
 st.sidebar.title("📁 Navigation")
-page = st.sidebar.selectbox("Go to", ["📊 Orders Dashboard", "📈 Revenue Dashboard"])
+page = st.sidebar.selectbox("Go to", ["📊 Orders Dashboard", "📊 Revenue Dashboard", "📊 Gross Margin Dashboard"])
 
 if page == "📊 Orders Dashboard":
     SHEET_ID = "1VGd-4Ycj8mz8ZvDV2chLt4bG8DMjQ64fSLADkmXLsPo"
