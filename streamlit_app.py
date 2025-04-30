@@ -435,12 +435,14 @@ else:
         (df["Achieved Gross Margin (USD)"] / df["Committed Gross Margin (USD)"]) * 100, np.nan)
 
     # ------------------ VISUALIZATIONS ------------------
+    import numpy as np
+
     st.header("📅 Monthly Trends")
 
-    # Convert Month-Year to datetime for sorting
+    # Step 1: Create sorting key
     df["MonthYearSort"] = pd.to_datetime(df["Month-Year"], format="%b %Y")
 
-    # Group by Month-Year
+    # Step 2: Aggregate monthly data
     monthly = (
         df.groupby("MonthYearSort")
         .agg({
@@ -452,33 +454,67 @@ else:
         .reset_index()
     )
 
-    # Format Month-Year back for display
     monthly["Month-Year"] = monthly["MonthYearSort"].dt.strftime("%b %Y")
 
-    # Avoid division by zero
-    monthly = monthly[monthly["Committed Revenue (USD)"] != 0]
-    monthly = monthly[monthly["Achieved Revenue (USD)"] != 0]
-    monthly = monthly[monthly["Committed Gross Margin (USD)"] != 0]
+    # Step 3: Calculate metrics safely
+    monthly["Committed Gross Margin (%)"] = np.where(
+        monthly["Committed Revenue (USD)"] != 0,
+        (monthly["Committed Gross Margin (USD)"] / monthly["Committed Revenue (USD)"]) * 100,
+        0
+    )
 
-    # Calculate %
-    monthly["Committed Gross Margin (%)"] = (monthly["Committed Gross Margin (USD)"] / monthly["Committed Revenue (USD)"]) * 100
-    monthly["Achieved Gross Margin (%)"] = (monthly["Achieved Gross Margin (USD)"] / monthly["Achieved Revenue (USD)"]) * 100
-    monthly["Margin Realization (%)"] = (monthly["Achieved Gross Margin (USD)"] / monthly["Committed Gross Margin (USD)"]) * 100
+    monthly["Achieved Gross Margin (%)"] = np.where(
+        monthly["Achieved Revenue (USD)"] != 0,
+        (monthly["Achieved Gross Margin (USD)"] / monthly["Achieved Revenue (USD)"]) * 100,
+        0
+    )
 
-    # Plot
+    monthly["Margin Realization (%)"] = np.where(
+        monthly["Committed Gross Margin (USD)"] != 0,
+        (monthly["Achieved Gross Margin (USD)"] / monthly["Committed Gross Margin (USD)"]) * 100,
+        0
+    )
+
+    # Step 4: Plot with tooltips
     fig1 = go.Figure()
+
     fig1.add_trace(go.Bar(
-        x=monthly["Month-Year"], y=monthly["Committed Gross Margin (USD)"],
-        name="Committed GM (USD)", marker_color='lightblue'
+        x=monthly["Month-Year"],
+        y=monthly["Committed Gross Margin (USD)"],
+        name="Committed GM (USD)",
+        marker_color='lightblue',
+        hovertemplate=(
+            "Month: %{x}<br>"
+            "Committed GM: $%{y:,.0f}<br>"
+            "Committed GM (%): %{customdata:.1f}%"
+        ),
+        customdata=monthly[["Committed Gross Margin (%)"]].values
     ))
+
     fig1.add_trace(go.Bar(
-        x=monthly["Month-Year"], y=monthly["Achieved Gross Margin (USD)"],
-        name="Achieved GM (USD)", marker_color='green'
+        x=monthly["Month-Year"],
+        y=monthly["Achieved Gross Margin (USD)"],
+        name="Achieved GM (USD)",
+        marker_color='green',
+        hovertemplate=(
+            "Month: %{x}<br>"
+            "Achieved GM: $%{y:,.0f}<br>"
+            "Achieved GM (%): %{customdata:.1f}%"
+        ),
+        customdata=monthly[["Achieved Gross Margin (%)"]].values
     ))
+
     fig1.add_trace(go.Scatter(
-        x=monthly["Month-Year"], y=monthly["Margin Realization (%)"],
-        name="Margin Realization (%)", yaxis="y2",
-        mode="lines+markers", line=dict(color="black")
+        x=monthly["Month-Year"],
+        y=monthly["Margin Realization (%)"],
+        name="Margin Realization (%)",
+        mode="lines+markers",
+        yaxis="y2",
+        line=dict(color="black"),
+        hovertemplate=(
+            "Month: %{x}<br>"
+            "Margin Realization: %{y:.1f}%"
+        )
     ))
 
     fig1.update_layout(
