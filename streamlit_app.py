@@ -358,7 +358,7 @@ elif page == "📊 Revenue Dashboard":
 
 else:
     # ------------------ SETTINGS ------------------
-    st.set_page_config(page_title="Gross Margin Dashboard", layout="wide")
+    #st.set_page_config(page_title="Gross Margin Dashboard", layout="wide")
     st.title("📊 Gross Margin Dashboard")
 
     # ------------------ DATA LOADING ------------------
