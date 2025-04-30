@@ -464,36 +464,41 @@ else:
     # ------------------ TREEMAP: Category-wise & Manager-wise ------------------
     st.subheader("📘 Category-wise & Manager-wise Breakdown (Treemap)")
 
-    # ✅ Step 1: Calculate 'Achieved Gross Margin (%)' if not present
+    # ✅ Step 1: Ensure Achieved Gross Margin (%) is calculated
     if 'Achieved Gross Margin (%)' not in filtered_df.columns:
         filtered_df = filtered_df.copy()
-        filtered_df = filtered_df[filtered_df['Achieved Revenue'] != 0]  # Avoid division by zero
+        filtered_df['Achieved Revenue'] = filtered_df['Achieved Revenue'].replace(0, np.nan)
         filtered_df['Achieved Gross Margin (%)'] = (
             (filtered_df['Achieved Revenue'] - (filtered_df['Achieved COGS'] + filtered_df['Achieved Logistics'] + filtered_df['Achieved P&F'] + filtered_df['Achieved Associate Payment'])) / filtered_df['Achieved Revenue']
         ) * 100
 
-    # ✅ Step 2: Create the treemap
+    # ✅ Step 2: Fill missing/NaN values to ensure all nodes are included
+    filtered_df['Achieved Gross Margin (%)'] = filtered_df['Achieved Gross Margin (%)'].fillna(0)
+
+    # ✅ Step 3: Replace zeros with a small positive value to make them visible in the treemap
+    filtered_df['Achieved Gross Margin Display'] = filtered_df['Achieved Gross Margin (%)'].apply(lambda x: x if x > 0 else 0.01)
+
+    # ✅ Step 4: Create the treemap
     fig_treemap = px.treemap(
         filtered_df,
         path=['Deal Manager', 'Plant Type', 'Customer'],
-        values='Achieved Gross Margin (%)',
+        values='Achieved Gross Margin Display',
         color='Achieved Gross Margin (%)',
         color_continuous_scale='Viridis',
         custom_data=['Deal Manager', 'Plant Type', 'Customer', 'Achieved Gross Margin (%)'],
         title='Category-wise & Manager-wise Breakdown'
     )
 
-    # ✅ Step 3: Update trace to show value inside boxes
+    # ✅ Step 5: Update visuals for clarity
     fig_treemap.update_traces(
         root_color="lightgrey",
-        hovertemplate='<b>%{label}</b><br>Gross Margin: %{value:.2f}%',
-        texttemplate='%{label}<br>%{value:.1f}%',
+        hovertemplate='<b>%{label}</b><br>Gross Margin: %{customdata[3]:.2f}%',
+        texttemplate='%{label}<br>%{customdata[3]:.1f}%',
         textinfo='label+value'
     )
 
-    # ✅ Step 4: Display in Streamlit
+    # ✅ Step 6: Display in Streamlit
     st.plotly_chart(fig_treemap, use_container_width=True)
-
 
     # ------------------ HEATMAP: Manager x Month ------------------
     st.subheader("🔥 Achieved Gross Margin (%) Heatmap (Manager × Month)")
