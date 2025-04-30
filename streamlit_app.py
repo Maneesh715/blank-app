@@ -375,6 +375,38 @@ else:
 
     df = load_data(CSV_URL)
 
+    #df["Month-Year"] = pd.to_datetime(df["Month-Year"], format="%b %Y", errors='coerce')
+    #df["New Customer"] = df["New Customer"].fillna(0).astype(int)
+    #df["Committed COGS"] = pd.to_numeric(df["Committed COGS"], errors='coerce').fillna(0)
+    #df["Achieved COGS"] = pd.to_numeric(df["Achieved COGS"], errors='coerce').fillna(0)
+    #df["Committed Logistics"] = pd.to_numeric(df["Committed Logistics"], errors='coerce').fillna(0)
+    #df["Achieved Logistics"] = pd.to_numeric(df["Achieved Logistics"], errors='coerce').fillna(0)
+    #df["Committed P&F"] = pd.to_numeric(df["Committed P&F"], errors='coerce').fillna(0)
+    #df["Achieved P&F"] = pd.to_numeric(df["Achieved P&F"], errors='coerce').fillna(0)
+    #df["Committed Associate Payment"] = pd.to_numeric(df["Committed Associate Payment"], errors='coerce').fillna(0)
+    #df["Achieved Associate Payment"] = pd.to_numeric(df["Achieved Associate Payment"], errors='coerce').fillna(0)
+    #df["Committed Revenue"] = pd.to_numeric(df["Committed Revenue"], errors='coerce').fillna(0)
+    #df["Achieved Revenue"] = pd.to_numeric(df["Achieved Revenue"], errors='coerce').fillna(0)
+    #df["Margin Realization (%)"] = df.apply(lambda row: ((1-(row["Achieved Revenue"] / row["Committed Revenue"] * 100) if row["Committed Revenue"] else 0, axis=1)
+
+    st.sidebar.header("🔎 Filters")
+    month_year = st.sidebar.multiselect("Select Month-Year(s):", options=sorted(df["Month-Year"].dropna().unique()))
+    deal_managers = st.sidebar.multiselect("Select Deal Manager(s):", options=sorted(df["Deal Manager"].dropna().unique()))
+    countries = st.sidebar.multiselect("Select Country(ies):", options=sorted(df["Country"].dropna().unique()))
+    plants = st.sidebar.multiselect("Select Plant Type(s):", options=sorted(df["Plant Type"].dropna().unique()))
+    customers = st.sidebar.multiselect("Select Customer(s):", options=sorted(df["Customer"].dropna().unique()))
+
+    filtered_df = df.copy()
+    if deal_managers:
+        filtered_df = filtered_df[filtered_df["Deal Manager"].isin(deal_managers)]
+    if countries:
+        filtered_df = filtered_df[filtered_df["Country"].isin(countries)]
+    if plants:
+        filtered_df = filtered_df[filtered_df["Plant Type"].isin(plants)]
+    if customers:
+        filtered_df = filtered_df[filtered_df["Customer"].isin(customers)]
+
+
     # ------------------ PREPROCESSING ------------------
     usd_conversion = 86
     value_cols_inr = [
@@ -430,57 +462,70 @@ else:
     st.plotly_chart(fig1, use_container_width=True)
 
     # ------------------ TREEMAP: Category-wise & Manager-wise ------------------
-    st.header("📂 Gross Margin Breakdown")
-    col1, col2 = st.columns(2)
-
-    with col1:
-        fig2 = px.treemap(df, path=['Plant Type', 'Deal Manager'],
-            values='Achieved Gross Margin (USD)',
-            title="Achieved Gross Margin (USD) by Category & Manager")
-        st.plotly_chart(fig2, use_container_width=True)
-
-    with col2:
-        df_valid = df[df["Achieved Revenue (USD)"] > 0]
-        df_valid["Achieved Gross Margin (%)"] = (df_valid["Achieved Gross Margin (USD)"] / df_valid["Achieved Revenue (USD)"]) * 100
-        fig3 = px.treemap(df_valid, path=['Plant Type', 'Deal Manager'],
-            values='Achieved Gross Margin (%)',
-            title="Achieved Gross Margin (%) by Category & Manager")
-        st.plotly_chart(fig3, use_container_width=True)
+    st.subheader("📘 Category-wise & Manager-wise Breakdown (Treemap)")
+    fig_treemap = px.treemap(
+        filtered_df,
+        path=['Deal Manager', 'Plant Type', 'Customer'],
+        values='Achieved Gross Margin (%)',
+        color='Achieved Gross Margin (%)',
+        color_continuous_scale='Viridis',
+        custom_data=['Deal Manager', 'Plant Type', 'Customer', 'Achieved Gross Margin (%)'],
+        title='Category-wise & Manager-wise Breakdown'
+    )
+    fig_treemap.update_traces(root_color="lightgrey")
+    st.plotly_chart(fig_treemap, use_container_width=True)
 
     # ------------------ HEATMAP: Manager x Month ------------------
-    st.header("🌡️ Achieved Gross Margin Heatmap")
-    heat_df = df.groupby(["Deal Manager", "Month-Year"]).agg({
-        "Achieved Gross Margin (USD)": "sum",
-        "Achieved Revenue (USD)": "sum"
-    }).reset_index()
-    heat_df["Achieved Gross Margin (%)"] = (heat_df["Achieved Gross Margin (USD)"] / heat_df["Achieved Revenue (USD)"]) * 100
+    st.subheader("🔥 Achieved Gross Margin (%) Heatmap (Manager × Month)")
 
-    pivot_usd = heat_df.pivot(index="Deal Manager", columns="Month-Year", values="Achieved Gross Margin (USD)")
-    pivot_pct = heat_df.pivot(index="Deal Manager", columns="Month-Year", values="Achieved Gross Margin (%)")
+    # Grouping and pivoting
+    heatmap_data = filtered_df.groupby(
+        ['Deal Manager', filtered_df['Month-Year'].dt.strftime('%b %Y')]
+    )['Achieved Gross Margin (%)'].sum().reset_index()
 
-    st.subheader("💰 Achieved Gross Margin (USD)")
-    st.dataframe(pivot_usd.style.format("{:,.0f}"))
+    heatmap_pivot = heatmap_data.pivot(index='Deal Manager', columns='Month-Year', values='Achieved Gross Margin (%)').fillna(0)
 
-    st.subheader("📈 Achieved Gross Margin (%)")
-    st.dataframe(pivot_pct.style.format("{:.1f}%"))
+    # Convert columns to string (important for plotly)
+    heatmap_pivot.columns = heatmap_pivot.columns.astype(str)
 
-    # ------------------ COUNTRY-WISE ANALYSIS ------------------
-    st.header("🌍 Region-wise Analysis")
-    country_df = df.groupby("Country").agg({
-        "Achieved Gross Margin (USD)": "sum",
-        "Achieved Revenue (USD)": "sum"
-    }).reset_index()
-    country_df["Achieved Gross Margin (%)"] = (country_df["Achieved Gross Margin (USD)"] / country_df["Achieved Revenue (USD)"]) * 100
+    # Plot only numeric matrix
+    fig_heatmap = px.imshow(
+        heatmap_pivot,
+        labels=dict(x="Month-Year", y="Deal Manager", color="Achieved Gross Margin (%)"),
+        color_continuous_scale='Turbo',
+        aspect="auto",
+        text_auto=True
+    )
+    fig_heatmap.update_layout(
+        title='Achieved Gross Margin (%) by Manager & Month',
+        xaxis_side="top"
+    )
 
-    fig4 = px.bar(country_df.sort_values("Achieved Gross Margin (USD)", ascending=False),
-                  x="Country", y="Achieved Gross Margin (USD)",
-                  title="Achieved Gross Margin (USD) by Country")
-    st.plotly_chart(fig4, use_container_width=True)
+    st.plotly_chart(fig_heatmap, use_container_width=True)
 
-    fig5 = px.bar(country_df.sort_values("Achieved Gross Margin (%)", ascending=False),
-                  x="Country", y="Achieved Gross Margin (%)",
-                  title="Achieved Gross Margin (%) by Country")
-    st.plotly_chart(fig5, use_container_width=True)
+    # Optional: Display average table separately (outside of heatmap)
+    st.subheader("📊 Manager-wise & Month-wise Averages")
+    avg_table = heatmap_pivot.copy()
+    avg_table.loc['Average'] = avg_table.mean()
+    avg_table['Average'] = avg_table.mean(axis=1)
+    st.dataframe(avg_table.style.format("{:.2f}"))
+
+
+    # ------------------ REGION-WISE ANALYSIS ------------------
+    st.subheader("🗺️ Region-wise Achieved Gross Margin (%)")
+    country_data = filtered_df.groupby('Country')['Achieved Gross Margin (%)'].sum().reset_index()
+    fig_choropleth = px.choropleth(
+        country_data,
+        locations='Country',
+        locationmode='country names',
+        color='Achieved Gross Margin (%)',
+        color_continuous_scale='Plasma',
+        title='Achieved Gross Margin (%) by Country',
+        hover_name='Country'
+    )
+    fig_choropleth.update_geos(showframe=True, showcoastlines=True, projection_type="natural earth")
+    fig_choropleth.update_layout(margin={"r":0,"t":50,"l":0,"b":0})
+    st.plotly_chart(fig_choropleth, use_container_width=True)
 
     # ------------------ END ------------------
 
