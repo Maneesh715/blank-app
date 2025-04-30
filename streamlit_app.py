@@ -501,11 +501,6 @@ else:
     st.plotly_chart(fig_treemap, use_container_width=True)
 
     # ------------------ HEATMAP: Manager x Month ------------------
-    import pandas as pd
-    import numpy as np
-    import plotly.express as px
-    import streamlit as st
-
     st.subheader("🔥 Achieved Gross Margin (%) Heatmap (Manager × Month)")
 
     # Step 1: Ensure 'Achieved Gross Margin (%)' exists only if needed (not storing this in original df)
@@ -525,7 +520,10 @@ else:
         .reset_index()
     )
 
-    # Step 4: Compute Achieved Gross Margin (%) from aggregated values
+    # ✅ Step 4: Filter out combinations where Achieved Revenue is 0
+    heatmap_data = heatmap_data[heatmap_data['Achieved Revenue'] != 0]
+
+    # Step 5: Compute Achieved Gross Margin (%) from aggregated values
     heatmap_data['Achieved Gross Margin (%)'] = (
         (heatmap_data['Achieved Revenue'] - (
             heatmap_data['Achieved COGS'] +
@@ -535,17 +533,17 @@ else:
         )) / heatmap_data['Achieved Revenue']
     ) * 100
 
-    # Step 5: Format 'Month-Year' for display
+    # Step 6: Format 'Month-Year' for display
     heatmap_data['Month-Year'] = heatmap_data['MonthYearSort'].dt.strftime('%b %Y')
 
-    # Step 6: Pivot data for heatmap
+    # Step 7: Pivot data for heatmap
     heatmap_pivot = heatmap_data.pivot(index='Deal Manager', columns='Month-Year', values='Achieved Gross Margin (%)').fillna(0)
 
-    # Step 7: Sort columns chronologically
+    # Step 8: Sort columns chronologically
     sorted_columns = sorted(heatmap_pivot.columns, key=lambda x: pd.to_datetime(x, format='%b %Y'))
     heatmap_pivot = heatmap_pivot[sorted_columns]
 
-    # Step 8: Plot heatmap
+    # Step 9: Plot heatmap
     fig_heatmap = px.imshow(
         heatmap_pivot,
         labels=dict(x="Month-Year", y="Deal Manager", color="Achieved Gross Margin (%)"),
@@ -559,7 +557,7 @@ else:
         xaxis_side="top"
     )
 
-    # Step 9: Show plot
+    # Step 10: Show plot
     st.plotly_chart(fig_heatmap, use_container_width=True)
 
 
