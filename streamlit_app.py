@@ -357,12 +357,6 @@ elif page == "📊 Revenue Dashboard":
         )
 
 else page == "📊 Gross Margin Dashboard":
-    import pandas as pd
-    import numpy as np
-    import plotly.express as px
-    import plotly.graph_objects as go
-    import streamlit as st
-
     # ------------------ SETTINGS ------------------
     st.set_page_config(page_title="Gross Margin Dashboard", layout="wide")
     st.title("📊 Gross Margin Dashboard")
