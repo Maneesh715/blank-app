@@ -8,7 +8,7 @@ from io import BytesIO
 st.set_page_config(page_title="Worldref Dashboard", layout="wide")
 
 st.sidebar.title("📁 Navigation")
-page = st.sidebar.selectbox("Go to", ["📊 Orders Dashboard", "📈 Sheet2 Dashboard"])
+page = st.sidebar.selectbox("Go to", ["📊 Orders Dashboard", "📈 Revenue Dashboard"])
 
 if page == "📊 Orders Dashboard":
     SHEET_ID = "1VGd-4Ycj8mz8ZvDV2chLt4bG8DMjQ64fSLADkmXLsPo"
@@ -30,6 +30,7 @@ if page == "📊 Orders Dashboard":
     df["Conversion Rate (%)"] = df.apply(lambda row: (row["Achieved Orders"] / row["Committed Orders"] * 100) if row["Committed Orders"] else 0, axis=1)
 
     st.sidebar.header("🔎 Filters")
+    month_year = st.sidebar.multiselect("Select Month-Year(s):", options=sorted(df["Month-Year"].dropna().unique()))
     deal_managers = st.sidebar.multiselect("Select Deal Manager(s):", options=sorted(df["Deal Manager"].dropna().unique()))
     countries = st.sidebar.multiselect("Select Country(ies):", options=sorted(df["Country"].dropna().unique()))
     plants = st.sidebar.multiselect("Select Plant Type(s):", options=sorted(df["Plant Type"].dropna().unique()))
