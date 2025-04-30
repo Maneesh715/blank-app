@@ -436,21 +436,50 @@ else:
 
     # ------------------ VISUALIZATIONS ------------------
     st.header("📅 Monthly Trends")
-    monthly = df.groupby("Month-Year").agg({
-        "Committed Gross Margin (USD)": "sum",
-        "Achieved Gross Margin (USD)": "sum",
-        "Committed Revenue (USD)": "sum",
-        "Achieved Revenue (USD)": "sum"
-    }).reset_index()
 
+    # Convert Month-Year to datetime for sorting
+    df["MonthYearSort"] = pd.to_datetime(df["Month-Year"], format="%b %Y")
+
+    # Group by Month-Year
+    monthly = (
+        df.groupby("MonthYearSort")
+        .agg({
+            "Committed Gross Margin (USD)": "sum",
+            "Achieved Gross Margin (USD)": "sum",
+            "Committed Revenue (USD)": "sum",
+            "Achieved Revenue (USD)": "sum"
+        })
+        .reset_index()
+    )
+
+    # Format Month-Year back for display
+    monthly["Month-Year"] = monthly["MonthYearSort"].dt.strftime("%b %Y")
+
+    # Avoid division by zero
+    monthly = monthly[monthly["Committed Revenue (USD)"] != 0]
+    monthly = monthly[monthly["Achieved Revenue (USD)"] != 0]
+    monthly = monthly[monthly["Committed Gross Margin (USD)"] != 0]
+
+    # Calculate %
     monthly["Committed Gross Margin (%)"] = (monthly["Committed Gross Margin (USD)"] / monthly["Committed Revenue (USD)"]) * 100
     monthly["Achieved Gross Margin (%)"] = (monthly["Achieved Gross Margin (USD)"] / monthly["Achieved Revenue (USD)"]) * 100
     monthly["Margin Realization (%)"] = (monthly["Achieved Gross Margin (USD)"] / monthly["Committed Gross Margin (USD)"]) * 100
 
+    # Plot
     fig1 = go.Figure()
-    fig1.add_trace(go.Bar(x=monthly["Month-Year"], y=monthly["Committed Gross Margin (USD)"], name="Committed GM (USD)", marker_color='lightblue'))
-    fig1.add_trace(go.Bar(x=monthly["Month-Year"], y=monthly["Achieved Gross Margin (USD)"], name="Achieved GM (USD)", marker_color='green'))
-    fig1.add_trace(go.Scatter(x=monthly["Month-Year"], y=monthly["Margin Realization (%)"], name="Margin Realization (%)", yaxis="y2", mode="lines+markers", line=dict(color="black")))
+    fig1.add_trace(go.Bar(
+        x=monthly["Month-Year"], y=monthly["Committed Gross Margin (USD)"],
+        name="Committed GM (USD)", marker_color='lightblue'
+    ))
+    fig1.add_trace(go.Bar(
+        x=monthly["Month-Year"], y=monthly["Achieved Gross Margin (USD)"],
+        name="Achieved GM (USD)", marker_color='green'
+    ))
+    fig1.add_trace(go.Scatter(
+        x=monthly["Month-Year"], y=monthly["Margin Realization (%)"],
+        name="Margin Realization (%)", yaxis="y2",
+        mode="lines+markers", line=dict(color="black")
+    ))
 
     fig1.update_layout(
         title="Monthly Gross Margin and Margin Realization",
@@ -459,7 +488,9 @@ else:
         yaxis2=dict(title="Margin Realization (%)", overlaying="y", side="right", range=[0, 120]),
         barmode='group'
     )
+
     st.plotly_chart(fig1, use_container_width=True)
+
 
     # ------------------ TREEMAP: Category-wise & Manager-wise ------------------
     st.subheader("📘 Category-wise & Manager-wise Breakdown (Treemap)")
