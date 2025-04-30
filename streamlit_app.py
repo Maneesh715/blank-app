@@ -474,6 +474,8 @@ else:
     (monthly["Achieved Gross Margin (USD)"] / monthly["Committed Gross Margin (USD)"]) * 100,
     0
 )
+    # ✅ New Line: Filter for valid rows only
+    monthly = monthly[monthly["Achieved Revenue (USD)"] != 0]
 
     # Step 4: Plot with tooltips
     fig1 = go.Figure()
