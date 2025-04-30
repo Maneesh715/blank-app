@@ -470,11 +470,12 @@ else:
     )
 
     monthly["Margin Realization (%)"] = np.where(
-    (monthly["Committed Gross Margin (USD)"] != 0) & (monthly["Achieved Gross Margin (USD)"] != 0),
-    (monthly["Achieved Gross Margin (USD)"] / monthly["Committed Gross Margin (USD)"]) * 100,
-    0
-)
-    # ✅ New Line: Filter for valid rows only
+        (monthly["Committed Gross Margin (USD)"] != 0) & (monthly["Achieved Gross Margin (USD)"] != 0),
+        (monthly["Achieved Gross Margin (USD)"] / monthly["Committed Gross Margin (USD)"]) * 100,
+        0
+    )
+
+    # ✅ Filter out rows with zero Achieved Revenue
     monthly = monthly[monthly["Achieved Revenue (USD)"] != 0]
 
     # Step 4: Plot with tooltips
@@ -528,7 +529,6 @@ else:
     )
 
     st.plotly_chart(fig1, use_container_width=True)
-
 
     # ------------------ TREEMAP: Category-wise & Manager-wise ------------------
     st.subheader("📘 Category-wise & Manager-wise Breakdown (Treemap)")
