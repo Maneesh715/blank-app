@@ -501,19 +501,51 @@ else:
     st.plotly_chart(fig_treemap, use_container_width=True)
 
     # ------------------ HEATMAP: Manager x Month ------------------
+    import pandas as pd
+    import numpy as np
+    import plotly.express as px
+    import streamlit as st
+
     st.subheader("🔥 Achieved Gross Margin (%) Heatmap (Manager × Month)")
 
-    # Grouping and pivoting
-    heatmap_data = filtered_df.groupby(
-        ['Deal Manager', filtered_df['Month-Year'].dt.strftime('%b %Y')]
-    )['Achieved Gross Margin (%)'].sum().reset_index()
+    # Step 1: Ensure 'Achieved Gross Margin (%)' exists only if needed (not storing this in original df)
+    # Step 2: Create 'MonthYearSort' from 'Month-Year' for sorting
+    filtered_df['MonthYearSort'] = pd.to_datetime(filtered_df['Month-Year'], format='%b %Y')
 
+    # Step 3: Aggregate raw financials by Deal Manager and Month-Year
+    heatmap_data = (
+        filtered_df.groupby(['Deal Manager', 'MonthYearSort'])
+        .agg({
+            'Achieved Revenue': 'sum',
+            'Achieved COGS': 'sum',
+            'Achieved Logistics': 'sum',
+            'Achieved P&F': 'sum',
+            'Achieved Associate Payment': 'sum'
+        })
+        .reset_index()
+    )
+
+    # Step 4: Compute Achieved Gross Margin (%) from aggregated values
+    heatmap_data['Achieved Gross Margin (%)'] = (
+        (heatmap_data['Achieved Revenue'] - (
+            heatmap_data['Achieved COGS'] +
+            heatmap_data['Achieved Logistics'] +
+            heatmap_data['Achieved P&F'] +
+            heatmap_data['Achieved Associate Payment']
+        )) / heatmap_data['Achieved Revenue']
+    ) * 100
+
+    # Step 5: Format 'Month-Year' for display
+    heatmap_data['Month-Year'] = heatmap_data['MonthYearSort'].dt.strftime('%b %Y')
+
+    # Step 6: Pivot data for heatmap
     heatmap_pivot = heatmap_data.pivot(index='Deal Manager', columns='Month-Year', values='Achieved Gross Margin (%)').fillna(0)
 
-    # Convert columns to string (important for plotly)
-    heatmap_pivot.columns = heatmap_pivot.columns.astype(str)
+    # Step 7: Sort columns chronologically
+    sorted_columns = sorted(heatmap_pivot.columns, key=lambda x: pd.to_datetime(x, format='%b %Y'))
+    heatmap_pivot = heatmap_pivot[sorted_columns]
 
-    # Plot only numeric matrix
+    # Step 8: Plot heatmap
     fig_heatmap = px.imshow(
         heatmap_pivot,
         labels=dict(x="Month-Year", y="Deal Manager", color="Achieved Gross Margin (%)"),
@@ -521,19 +553,14 @@ else:
         aspect="auto",
         text_auto=True
     )
+
     fig_heatmap.update_layout(
         title='Achieved Gross Margin (%) by Manager & Month',
         xaxis_side="top"
     )
 
+    # Step 9: Show plot
     st.plotly_chart(fig_heatmap, use_container_width=True)
-
-    # Optional: Display average table separately (outside of heatmap)
-    st.subheader("📊 Manager-wise & Month-wise Averages")
-    avg_table = heatmap_pivot.copy()
-    avg_table.loc['Average'] = avg_table.mean()
-    avg_table['Average'] = avg_table.mean(axis=1)
-    st.dataframe(avg_table.style.format("{:.2f}"))
 
 
     # ------------------ REGION-WISE ANALYSIS ------------------
