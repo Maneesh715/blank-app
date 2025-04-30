@@ -345,14 +345,177 @@ elif page == "📊 Revenue Dashboard":
         st.download_button(
             label="📥 Download as Excel",
             data=excel_data,
-            file_name="filtered_orders_data.xlsx",
+            file_name="filtered_revenue_data.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
     with col2:
         st.download_button(
             label="📥 Download as CSV",
             data=csv_data,
-            file_name="filtered_orders_data.csv",
+            file_name="filtered_revenue_data.csv",
             mime="text/csv"
         )
 
+else page == "📊 Gross Margin Dashboard":
+    import pandas as pd
+    import numpy as np
+    import plotly.express as px
+    import plotly.graph_objects as go
+    import streamlit as st
+
+    # ------------------ SETTINGS ------------------
+    st.set_page_config(page_title="Gross Margin Dashboard", layout="wide")
+    st.title("📊 Gross Margin Dashboard")
+
+    # ------------------ DATA LOADING ------------------
+    SHEET_ID = "1VGd-4Ycj8mz8ZvDV2chLt4bG8DMjQ64fSLADkmXLsPo"
+    SHEET_NAME = "Sheet3"
+    CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
+
+    @st.cache_data
+    def load_data(url):
+        df = pd.read_csv(url)
+        df.columns = df.columns.str.strip()
+        return df
+
+    df = load_data(CSV_URL)
+
+    # ------------------ PREPROCESSING ------------------
+    usd_conversion = 86
+    value_cols_inr = [
+        "Committed COGS", "Achieved COGS", "Committed Logistics", "Achieved Logistics",
+        "Committed P&F", "Achieved P&F", "Committed Associate Payment", "Achieved Associate Payment",
+        "Committed Revenue", "Achieved Revenue"
+    ]
+
+    for col in value_cols_inr:
+        df[col] = pd.to_numeric(df[col], errors='coerce')
+        df[col + " (USD)"] = df[col] / usd_conversion
+
+    # Compute gross margins (in USD)
+    df["Committed Gross Margin (USD)"] = df["Committed Revenue (USD)"] - (
+        df["Committed COGS (USD)"] + df["Committed Logistics (USD)"] + df["Committed P&F (USD)"] + df["Committed Associate Payment (USD)"])
+
+    df["Achieved Gross Margin (USD)"] = df["Achieved Revenue (USD)"] - (
+        df["Achieved COGS (USD)"] + df["Achieved Logistics (USD)"] + df["Achieved P&F (USD)"] + df["Achieved Associate Payment (USD)"])
+
+    # Compute % values using total-based method (not simple mean)
+    df["Committed Gross Margin (%)"] = np.where(df["Committed Revenue (USD)"] > 0,
+        (df["Committed Gross Margin (USD)"] / df["Committed Revenue (USD)"]) * 100, np.nan)
+    df["Achieved Gross Margin (%)"] = np.where(df["Achieved Revenue (USD)"] > 0,
+        (df["Achieved Gross Margin (USD)"] / df["Achieved Revenue (USD)"]) * 100, np.nan)
+    df["Margin Realization (%)"] = np.where(df["Committed Gross Margin (USD)"] > 0,
+        (df["Achieved Gross Margin (USD)"] / df["Committed Gross Margin (USD)"]) * 100, np.nan)
+
+    # ------------------ VISUALIZATIONS ------------------
+    st.header("📅 Monthly Trends")
+    monthly = df.groupby("Month-Year").agg({
+        "Committed Gross Margin (USD)": "sum",
+        "Achieved Gross Margin (USD)": "sum",
+        "Committed Revenue (USD)": "sum",
+        "Achieved Revenue (USD)": "sum"
+    }).reset_index()
+
+    monthly["Committed Gross Margin (%)"] = (monthly["Committed Gross Margin (USD)"] / monthly["Committed Revenue (USD)"]) * 100
+    monthly["Achieved Gross Margin (%)"] = (monthly["Achieved Gross Margin (USD)"] / monthly["Achieved Revenue (USD)"]) * 100
+    monthly["Margin Realization (%)"] = (monthly["Achieved Gross Margin (USD)"] / monthly["Committed Gross Margin (USD)"]) * 100
+
+    fig1 = go.Figure()
+    fig1.add_trace(go.Bar(x=monthly["Month-Year"], y=monthly["Committed Gross Margin (USD)"], name="Committed GM (USD)", marker_color='lightblue'))
+    fig1.add_trace(go.Bar(x=monthly["Month-Year"], y=monthly["Achieved Gross Margin (USD)"], name="Achieved GM (USD)", marker_color='green'))
+    fig1.add_trace(go.Scatter(x=monthly["Month-Year"], y=monthly["Margin Realization (%)"], name="Margin Realization (%)", yaxis="y2", mode="lines+markers", line=dict(color="black")))
+
+    fig1.update_layout(
+        title="Monthly Gross Margin and Margin Realization",
+        xaxis_title="Month-Year",
+        yaxis=dict(title="Gross Margin (USD)"),
+        yaxis2=dict(title="Margin Realization (%)", overlaying="y", side="right", range=[0, 120]),
+        barmode='group'
+    )
+    st.plotly_chart(fig1, use_container_width=True)
+
+    # ------------------ TREEMAP: Category-wise & Manager-wise ------------------
+    st.header("📂 Gross Margin Breakdown")
+    col1, col2 = st.columns(2)
+
+    with col1:
+        fig2 = px.treemap(df, path=['Plant Type', 'Deal Manager'],
+            values='Achieved Gross Margin (USD)',
+            title="Achieved Gross Margin (USD) by Category & Manager")
+        st.plotly_chart(fig2, use_container_width=True)
+
+    with col2:
+        df_valid = df[df["Achieved Revenue (USD)"] > 0]
+        df_valid["Achieved Gross Margin (%)"] = (df_valid["Achieved Gross Margin (USD)"] / df_valid["Achieved Revenue (USD)"]) * 100
+        fig3 = px.treemap(df_valid, path=['Plant Type', 'Deal Manager'],
+            values='Achieved Gross Margin (%)',
+            title="Achieved Gross Margin (%) by Category & Manager")
+        st.plotly_chart(fig3, use_container_width=True)
+
+    # ------------------ HEATMAP: Manager x Month ------------------
+    st.header("🌡️ Achieved Gross Margin Heatmap")
+    heat_df = df.groupby(["Deal Manager", "Month-Year"]).agg({
+        "Achieved Gross Margin (USD)": "sum",
+        "Achieved Revenue (USD)": "sum"
+    }).reset_index()
+    heat_df["Achieved Gross Margin (%)"] = (heat_df["Achieved Gross Margin (USD)"] / heat_df["Achieved Revenue (USD)"]) * 100
+
+    pivot_usd = heat_df.pivot(index="Deal Manager", columns="Month-Year", values="Achieved Gross Margin (USD)")
+    pivot_pct = heat_df.pivot(index="Deal Manager", columns="Month-Year", values="Achieved Gross Margin (%)")
+
+    st.subheader("💰 Achieved Gross Margin (USD)")
+    st.dataframe(pivot_usd.style.format("{:,.0f}"))
+
+    st.subheader("📈 Achieved Gross Margin (%)")
+    st.dataframe(pivot_pct.style.format("{:.1f}%"))
+
+    # ------------------ COUNTRY-WISE ANALYSIS ------------------
+    st.header("🌍 Region-wise Analysis")
+    country_df = df.groupby("Country").agg({
+        "Achieved Gross Margin (USD)": "sum",
+        "Achieved Revenue (USD)": "sum"
+    }).reset_index()
+    country_df["Achieved Gross Margin (%)"] = (country_df["Achieved Gross Margin (USD)"] / country_df["Achieved Revenue (USD)"]) * 100
+
+    fig4 = px.bar(country_df.sort_values("Achieved Gross Margin (USD)", ascending=False),
+                  x="Country", y="Achieved Gross Margin (USD)",
+                  title="Achieved Gross Margin (USD) by Country")
+    st.plotly_chart(fig4, use_container_width=True)
+
+    fig5 = px.bar(country_df.sort_values("Achieved Gross Margin (%)", ascending=False),
+                  x="Country", y="Achieved Gross Margin (%)",
+                  title="Achieved Gross Margin (%) by Country")
+    st.plotly_chart(fig5, use_container_width=True)
+
+    # ------------------ END ------------------
+
+    # --- Download ---
+    st.subheader("⬇️ Download Filtered Data")
+
+    def convert_df(df, to_excel=True):
+        output = BytesIO()
+        if to_excel:
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                df.to_excel(writer, index=False, sheet_name='Sheet3')
+            return output.getvalue()
+        else:
+            return df.to_csv(index=False).encode('utf-8')
+
+    excel_data = convert_df(filtered_df, to_excel=True)
+    csv_data = convert_df(filtered_df, to_excel=False)
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.download_button(
+            label="📥 Download as Excel",
+            data=excel_data,
+            file_name="filtered_GM_data.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    with col2:
+        st.download_button(
+            label="📥 Download as CSV",
+            data=csv_data,
+            file_name="filtered_GM_data.csv",
+            mime="text/csv"
+        )
