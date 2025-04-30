@@ -356,7 +356,7 @@ elif page == "📊 Revenue Dashboard":
             mime="text/csv"
         )
 
-else page == "📊 Gross Margin Dashboard":
+else:
     # ------------------ SETTINGS ------------------
     st.set_page_config(page_title="Gross Margin Dashboard", layout="wide")
     st.title("📊 Gross Margin Dashboard")
