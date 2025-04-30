@@ -463,6 +463,16 @@ else:
 
     # ------------------ TREEMAP: Category-wise & Manager-wise ------------------
     st.subheader("📘 Category-wise & Manager-wise Breakdown (Treemap)")
+
+    # ✅ Step 1: Calculate 'Achieved Gross Margin (%)' if not present
+    if 'Achieved Gross Margin (%)' not in filtered_df.columns:
+        filtered_df = filtered_df.copy()
+        filtered_df = filtered_df[filtered_df['Achieved Revenue'] != 0]  # Avoid division by zero
+        filtered_df['Achieved Gross Margin (%)'] = (
+            (filtered_df['Achieved Revenue'] - (filtered_df['Achieved COGS'] + filtered_df['Achieved Logistics'] + filtered_df['Achieved P&F'] + filtered_df['Achieved Associate Payment'])) / filtered_df['Achieved Revenue']
+        ) * 100
+
+    # ✅ Step 2: Create the treemap
     fig_treemap = px.treemap(
         filtered_df,
         path=['Deal Manager', 'Plant Type', 'Customer'],
@@ -472,8 +482,18 @@ else:
         custom_data=['Deal Manager', 'Plant Type', 'Customer', 'Achieved Gross Margin (%)'],
         title='Category-wise & Manager-wise Breakdown'
     )
-    fig_treemap.update_traces(root_color="lightgrey")
+
+    # ✅ Step 3: Update trace to show value inside boxes
+    fig_treemap.update_traces(
+        root_color="lightgrey",
+        hovertemplate='<b>%{label}</b><br>Gross Margin: %{value:.2f}%',
+        texttemplate='%{label}<br>%{value:.1f}%',
+        textinfo='label+value'
+    )
+
+    # ✅ Step 4: Display in Streamlit
     st.plotly_chart(fig_treemap, use_container_width=True)
+
 
     # ------------------ HEATMAP: Manager x Month ------------------
     st.subheader("🔥 Achieved Gross Margin (%) Heatmap (Manager × Month)")
