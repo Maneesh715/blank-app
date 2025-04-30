@@ -579,7 +579,10 @@ else:
     # Step 2: Create 'MonthYearSort' from 'Month-Year' for sorting
     filtered_df['MonthYearSort'] = pd.to_datetime(filtered_df['Month-Year'], format='%b %Y')
 
-    # Step 3: Aggregate raw financials by Deal Manager and Month-Year
+    # Step 3: Filter rows where Achieved Revenue is not zero
+    filtered_df = df[df['Achieved Revenue'] != 0]
+
+    # Then aggregate raw financials by Deal Manager and Month-Year
     heatmap_data = (
         filtered_df.groupby(['Deal Manager', 'MonthYearSort'])
         .agg({
@@ -591,6 +594,7 @@ else:
         })
         .reset_index()
     )
+
 
     # ✅ Step 4: Filter out combinations where Achieved Revenue is 0
     heatmap_data = heatmap_data[heatmap_data['Achieved Revenue'] != 0]
