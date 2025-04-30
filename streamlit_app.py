@@ -183,8 +183,7 @@ if page == "📊 Orders Dashboard":
             mime="text/csv"
         )
 
-elif:
-    if page == "📊 Revenue Dashboard":
+elif page == "📊 Revenue Dashboard":
     SHEET_ID = "1VGd-4Ycj8mz8ZvDV2chLt4bG8DMjQ64fSLADkmXLsPo"
     SHEET_NAME = "Sheet2"
     CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
@@ -197,7 +196,7 @@ elif:
 
     df = load_data(CSV_URL)
 
-    df["Month-Year"] = pd.to_datetime(df["Month-Year"], format="%b %Y")
+    df["Month-Year"] = pd.to_datetime(df["Month-Year"], format="%b %Y", errors='coerce')
     df["New Customer"] = df["New Customer"].fillna(0).astype(int)
     df["Committed Revenue"] = pd.to_numeric(df["Committed Revenue"], errors='coerce').fillna(0)
     df["Achieved Revenue"] = pd.to_numeric(df["Achieved Revenue"], errors='coerce').fillna(0)
