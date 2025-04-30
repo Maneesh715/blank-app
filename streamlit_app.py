@@ -443,8 +443,11 @@ else:
     df["MonthYearSort"] = pd.to_datetime(df["Month-Year"], format="%b %Y")
 
     # Step 2: Aggregate monthly data
+    # Step 2: Filter rows where Achieved Revenue is not zero before aggregation
+    filtered_df = df[df["Achieved Revenue (USD)"] != 0]
+
     monthly = (
-        df.groupby("MonthYearSort")
+        filtered_df.groupby("MonthYearSort")
         .agg({
             "Committed Gross Margin (USD)": "sum",
             "Achieved Gross Margin (USD)": "sum",
