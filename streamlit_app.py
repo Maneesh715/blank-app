@@ -545,6 +545,11 @@ else:
 
 
     # ------------------ VISUALIZATION ------------------
+    import streamlit as st
+    import pandas as pd
+    import numpy as np
+    import plotly.graph_objects as go
+
     st.header("📅 Monthly Gross Margin & Margin Realization")
 
     # Add sorting column
@@ -589,55 +594,58 @@ else:
     # Plot
     fig1 = go.Figure()
 
+    # Committed Gross Margin (%)
     fig1.add_trace(go.Bar(
         x=monthly["Month-Year"],
-        y=monthly["Committed Gross Margin (USD)"],
-        name="Committed GM (USD)",
+        y=monthly["Committed Gross Margin (%)"],
+        name="Committed GM (%)",
         marker_color='lightblue',
-        hovertemplate=(
-            "Month: %{x}<br>"
-            "Committed GM: $%{y:,.0f}<br>"
-            "Committed GM (%): %{customdata:.1f}%"
-        ),
-        customdata=monthly[["Committed Gross Margin (%)"]].values
+        yaxis="y",
+        hovertemplate="Month: %{x}<br>Committed GM: %{y:.1f}%"
     ))
 
+    # Achieved Gross Margin (%)
     fig1.add_trace(go.Bar(
+        x=monthly["Month-Year"],
+        y=monthly["Achieved Gross Margin (%)"],
+        name="Achieved GM (%)",
+        marker_color='green',
+        yaxis="y",
+        hovertemplate="Month: %{x}<br>Achieved GM: %{y:.1f}%"
+    ))
+
+    # Margin Realization in USD (Line Plot, right axis)
+    fig1.add_trace(go.Scatter(
         x=monthly["Month-Year"],
         y=monthly["Achieved Gross Margin (USD)"],
         name="Achieved GM (USD)",
-        marker_color='green',
-        hovertemplate=(
-            "Month: %{x}<br>"
-            "Achieved GM: $%{y:,.0f}<br>"
-            "Achieved GM (%): %{customdata:.1f}%"
-        ),
-        customdata=monthly[["Achieved Gross Margin (%)"]].values
-    ))
-
-    fig1.add_trace(go.Scatter(
-        x=monthly["Month-Year"],
-        y=monthly["Margin Realization (%)"],
-        name="Margin Realization (%)",
         mode="lines+markers",
         yaxis="y2",
         line=dict(color="black"),
-        hovertemplate=(
-            "Month: %{x}<br>"
-            "Margin Realization: %{y:.1f}%"
-        )
+        hovertemplate="Month: %{x}<br>Achieved GM (USD): $%{y:,.0f}"
     ))
 
+    # Layout
     fig1.update_layout(
-        title="Monthly Gross Margin and Margin Realization",
+        title="Monthly Gross Margin (%) and Gross Margin (USD)",
         xaxis_title="Month-Year",
-        yaxis=dict(title="Gross Margin (USD)"),
-        yaxis2=dict(title="Margin Realization (%)", overlaying="y", side="right", range=[0, 120]),
-        barmode='group'
+        yaxis=dict(
+            title="Gross Margin (%)",
+            range=[0, max(monthly[["Committed Gross Margin (%)", "Achieved Gross Margin (%)"]].max()) + 10],
+            showgrid=False
+        ),
+        yaxis2=dict(
+            title="Achieved GM (USD)",
+            overlaying="y",
+            side="right",
+            showgrid=False
+        ),
+        barmode='group',
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="center", x=0.5),
+        height=500
     )
 
     st.plotly_chart(fig1, use_container_width=True)
-
 
     # ------------------ TREEMAP: Category-wise & Manager-wise ------------------
     st.subheader("📘 Category-wise & Manager-wise Breakdown (Treemap)")
