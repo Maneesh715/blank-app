@@ -117,6 +117,9 @@ if page == "📊 Orders Dashboard":
     # --- Heatmap with Drill-down ---
     st.subheader("🔥 Achieved Orders Heatmap (Manager × Month)")
 
+    # Add spacing below the subheader
+    st.markdown("### ")
+
     # Convert to datetime for proper chronological sorting
     filtered_df['Month_Year_Date'] = pd.to_datetime(filtered_df['Month-Year'], format='%b %Y')
 
@@ -304,6 +307,9 @@ elif page == "📊 Revenue Dashboard":
 
     # --- Heatmap with Drill-down ---
     st.subheader("🔥 Achieved Revenue Heatmap (Manager × Month)")
+
+    # Add spacing below the subheader
+    st.markdown("### ")
 
     # Convert to datetime for sorting
     filtered_df['Month_Year_Date'] = pd.to_datetime(filtered_df['Month-Year'], format='%b %Y')
@@ -600,6 +606,9 @@ else:
 
     # ------------------ HEATMAP: Manager x Month ------------------
     st.subheader("🔥 Achieved Gross Margin (%) Heatmap (Manager × Month)")
+
+    # Add spacing below the subheader
+    st.markdown("### ")
 
     # Step 1: Filter rows where Achieved Revenue is not zero
     filtered_df = df[df['Achieved Revenue'] != 0].copy()
