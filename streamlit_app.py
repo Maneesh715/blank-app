@@ -600,7 +600,7 @@ else:
     st.plotly_chart(fig_treemap, use_container_width=True)
 
     # ------------------ HEATMAP: Manager x Month ------------------
-   st.subheader("🔥 Achieved Gross Margin (%) Heatmap (Manager × Month)")
+    st.subheader("🔥 Achieved Gross Margin (%) Heatmap (Manager × Month)")
 
     # Step 1: Filter rows where Achieved Revenue is not zero
     filtered_df = df[df['Achieved Revenue'] != 0].copy()
