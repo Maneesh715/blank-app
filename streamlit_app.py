@@ -331,7 +331,7 @@ elif page == "📊 Revenue Dashboard":
         labels=dict(x="Month-Year", y="Deal Manager", color="Achieved Revenue"),
         color_continuous_scale='Turbo',
         aspect="auto",
-        text_auto=True
+        text_auto=".2f"
     )
     fig_heatmap.update_layout(
         #title='Achieved Revenue by Manager & Month (with Averages)',
