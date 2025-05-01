@@ -41,18 +41,26 @@ if page == "📊 Orders Dashboard":
     #)
 
     st.sidebar.header("🔎 Filters")
-    month_options = sorted(df["Month-Year"].dropna().dt.strftime('%b %Y').unique())
-    month_year = st.sidebar.multiselect("Select Month-Year(s):", options=month_options)
+
+    # Sort Month-Year in chronological order for filtering
+    month_options = sorted(df["Month-Year"].dropna().unique())
+
+    # Convert back to 'Month-Year' string format for display purposes
+    month_year = st.sidebar.multiselect("Select Month-Year(s):", options=month_options, format_func=lambda x: x.strftime('%b %Y'))
+
+    # Filter the dataframe based on selected Month-Year
+    if month_year:
+        month_year_filtered = [pd.to_datetime(month, format='%b %Y') for month in month_year]
+        filtered_df = df[df["Month-Year"].isin(month_year_filtered)]
+    else:
+        filtered_df = df.copy()
+
+    # Filter based on other sidebar options
     deal_managers = st.sidebar.multiselect("Select Deal Manager(s):", options=sorted(df["Deal Manager"].dropna().unique()))
     countries = st.sidebar.multiselect("Select Country(ies):", options=sorted(df["Country"].dropna().unique()))
     plants = st.sidebar.multiselect("Select Plant Type(s):", options=sorted(df["Plant Type"].dropna().unique()))
     customers = st.sidebar.multiselect("Select Customer(s):", options=sorted(df["Customer"].dropna().unique()))
 
-    # Filter dataframe based on selected options
-    filtered_df = df.copy()
-
-    if month_year:
-        filtered_df = filtered_df[filtered_df["Month-Year"].dt.strftime('%b %Y').isin(month_year)]
     if deal_managers:
         filtered_df = filtered_df[filtered_df["Deal Manager"].isin(deal_managers)]
     if countries:
@@ -75,7 +83,6 @@ if page == "📊 Orders Dashboard":
     #st.metric("New Customers", new_customers)
     #st.metric("Average Order Size", f"{average_order_size:,.2f}")
     #st.metric("Conversion Rate (%)", f"{conversion_rate:.2f}%")
-
 
     col1, col2, col3, col4, col5 = st.columns(5)
     col1.metric("📌 Total Committed Orders", f"${total_committed:,.0f}")
