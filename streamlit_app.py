@@ -70,10 +70,10 @@ if page == "📊 Orders Dashboard":
     #conversion_rate = (total_achieved / total_committed) * 100 if total_committed else 0
 
     # Display metrics
-    st.metric("Total Committed Orders", f"{total_committed:,.0f}")
-    st.metric("Total Achieved Orders", f"{total_achieved:,.0f}")
-    st.metric("New Customers", new_customers)
-    st.metric("Average Order Size", f"{average_order_size:,.2f}")
+    #st.metric("Total Committed Orders", f"{total_committed:,.0f}")
+    #st.metric("Total Achieved Orders", f"{total_achieved:,.0f}")
+    #st.metric("New Customers", new_customers)
+    #st.metric("Average Order Size", f"{average_order_size:,.2f}")
     #st.metric("Conversion Rate (%)", f"{conversion_rate:.2f}%")
 
 
