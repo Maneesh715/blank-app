@@ -268,8 +268,8 @@ elif page == "📊 Revenue Dashboard":
                                 name="Achieved Revenue", marker_color="#1d3557", text=monthly_summary["Achieved Revenue"], textposition='outside'),
                          secondary_y=False)
     #fig_revenue.add_trace(go.Scatter(x=monthly_summary["Month-Year"], y=monthly_summary["Conversion Rate (%)"],
-                                    name="Conversion Rate (%)", mode='lines+markers', line=dict(color="#e76f51", width=3), marker=dict(size=6)),
-                         secondary_y=True)
+                                    #name="Conversion Rate (%)", mode='lines+markers', line=dict(color="#e76f51", width=3), marker=dict(size=6)),
+                         #secondary_y=True)
 
     fig_revenue.update_layout(
         title="📊 Monthly Revenue",
