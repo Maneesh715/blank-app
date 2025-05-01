@@ -405,6 +405,14 @@ else:
     df["Margin Realization (%)"] = np.where(df["Committed Gross Margin (USD)"] > 0,
         (df["Achieved Gross Margin (USD)"] / df["Committed Gross Margin (USD)"]) * 100, np.nan)
 
+    # Display KPI cards in 3 columns
+    col1, col2, col3 = st.columns(3)
+
+    col1.metric("Achieved Gross Margin (USD)", f"${gross_margin_usd:,.2f}")
+    col2.metric("Achieved Gross Margin (%)", f"{gross_margin_percent:.2f}%")
+    col3.metric("Margin Realization (%)", f"{margin_realization_percent:.2f}%")
+
+
     # ------------------ SIDEBAR FILTERS ------------------
     st.sidebar.header("🔎 Filters")
     month_year = st.sidebar.multiselect("Select Month-Year(s):", options=sorted(df["Month-Year"].dropna().unique()))
