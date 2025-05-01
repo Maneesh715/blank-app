@@ -501,14 +501,22 @@ else:
 
 
     # ------------------ SIDEBAR FILTERS ------------------
+    # Convert and clean data
+    df["Month-Year"] = pd.to_datetime(df["Month-Year"], format="%b %Y", errors='coerce')
+    df = df.dropna(subset=["Month-Year"])  # Ensure datetime format only
+
+    df["New Customer"] = df["New Customer"].fillna(0).astype(int)
+    df["Committed Revenue"] = pd.to_numeric(df["Committed Revenue"], errors='coerce').fillna(0)
+    df["Achieved Revenue"] = pd.to_numeric(df["Achieved Revenue"], errors='coerce').fillna(0)
+
+    # Sidebar Filters
     st.sidebar.header("🔎 Filters")
 
-    # Sort Month-Year chronologically and format for display
-    month_year_options = sorted(df["Month-Year"].dropna().unique())
+    month_year_options = sorted(df["Month-Year"].unique())
     month_year = st.sidebar.multiselect(
         "Select Month-Year(s):",
         options=month_year_options,
-        format_func=lambda x: x.strftime('%b %Y')  # Display as 'Apr 2024' etc.
+        format_func=lambda x: x.strftime('%b %Y')  # Display nicely
     )
 
     deal_managers = st.sidebar.multiselect("Select Deal Manager(s):", options=sorted(df["Deal Manager"].dropna().unique()))
@@ -528,6 +536,13 @@ else:
         filtered_df = filtered_df[filtered_df["Plant Type"].isin(plants)]
     if customers:
         filtered_df = filtered_df[filtered_df["Customer"].isin(customers)]
+
+    # Calculations
+    total_committed = filtered_df["Committed Revenue"].sum()
+    total_achieved = filtered_df["Achieved Revenue"].sum()
+    new_customers = filtered_df["New Customer"].sum()
+    average_revenue_size = (total_achieved / len(filtered_df)) if len(filtered_df) > 0 else 0
+
 
     # ------------------ VISUALIZATION ------------------
     st.header("📅 Monthly Gross Margin & Margin Realization")
