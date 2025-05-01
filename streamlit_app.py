@@ -363,6 +363,11 @@ else:
     st.title("📊 Gross Margin Dashboard")
 
     # ------------------ DATA LOADING ------------------
+    import streamlit as st
+    import pandas as pd
+    import numpy as np
+    import plotly.graph_objects as go
+
     SHEET_ID = "1VGd-4Ycj8mz8ZvDV2chLt4bG8DMjQ64fSLADkmXLsPo"
     SHEET_NAME = "Sheet3"
     CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
@@ -375,39 +380,7 @@ else:
 
     df = load_data(CSV_URL)
 
-    #df["Month-Year"] = pd.to_datetime(df["Month-Year"], format="%b %Y", errors='coerce')
-    #df["New Customer"] = df["New Customer"].fillna(0).astype(int)
-    #df["Committed COGS"] = pd.to_numeric(df["Committed COGS"], errors='coerce').fillna(0)
-    #df["Achieved COGS"] = pd.to_numeric(df["Achieved COGS"], errors='coerce').fillna(0)
-    #df["Committed Logistics"] = pd.to_numeric(df["Committed Logistics"], errors='coerce').fillna(0)
-    #df["Achieved Logistics"] = pd.to_numeric(df["Achieved Logistics"], errors='coerce').fillna(0)
-    #df["Committed P&F"] = pd.to_numeric(df["Committed P&F"], errors='coerce').fillna(0)
-    #df["Achieved P&F"] = pd.to_numeric(df["Achieved P&F"], errors='coerce').fillna(0)
-    #df["Committed Associate Payment"] = pd.to_numeric(df["Committed Associate Payment"], errors='coerce').fillna(0)
-    #df["Achieved Associate Payment"] = pd.to_numeric(df["Achieved Associate Payment"], errors='coerce').fillna(0)
-    #df["Committed Revenue"] = pd.to_numeric(df["Committed Revenue"], errors='coerce').fillna(0)
-    #df["Achieved Revenue"] = pd.to_numeric(df["Achieved Revenue"], errors='coerce').fillna(0)
-    #df["Margin Realization (%)"] = df.apply(lambda row: ((1-(row["Achieved Revenue"] / row["Committed Revenue"] * 100) if row["Committed Revenue"] else 0, axis=1)
-
-    st.sidebar.header("🔎 Filters")
-    month_year = st.sidebar.multiselect("Select Month-Year(s):", options=sorted(df["Month-Year"].dropna().unique()))
-    deal_managers = st.sidebar.multiselect("Select Deal Manager(s):", options=sorted(df["Deal Manager"].dropna().unique()))
-    countries = st.sidebar.multiselect("Select Country(ies):", options=sorted(df["Country"].dropna().unique()))
-    plants = st.sidebar.multiselect("Select Plant Type(s):", options=sorted(df["Plant Type"].dropna().unique()))
-    customers = st.sidebar.multiselect("Select Customer(s):", options=sorted(df["Customer"].dropna().unique()))
-
-    filtered_df = df.copy()
-    if deal_managers:
-        filtered_df = filtered_df[filtered_df["Deal Manager"].isin(deal_managers)]
-    if countries:
-        filtered_df = filtered_df[filtered_df["Country"].isin(countries)]
-    if plants:
-        filtered_df = filtered_df[filtered_df["Plant Type"].isin(plants)]
-    if customers:
-        filtered_df = filtered_df[filtered_df["Customer"].isin(customers)]
-
-
-    # ------------------ PREPROCESSING ------------------
+    # Preprocessing
     usd_conversion = 86
     value_cols_inr = [
         "Committed COGS", "Achieved COGS", "Committed Logistics", "Achieved Logistics",
@@ -419,14 +392,12 @@ else:
         df[col] = pd.to_numeric(df[col], errors='coerce')
         df[col + " (USD)"] = df[col] / usd_conversion
 
-    # Compute gross margins (in USD)
     df["Committed Gross Margin (USD)"] = df["Committed Revenue (USD)"] - (
         df["Committed COGS (USD)"] + df["Committed Logistics (USD)"] + df["Committed P&F (USD)"] + df["Committed Associate Payment (USD)"])
 
     df["Achieved Gross Margin (USD)"] = df["Achieved Revenue (USD)"] - (
         df["Achieved COGS (USD)"] + df["Achieved Logistics (USD)"] + df["Achieved P&F (USD)"] + df["Achieved Associate Payment (USD)"])
 
-    # Compute % values using total-based method (not simple mean)
     df["Committed Gross Margin (%)"] = np.where(df["Committed Revenue (USD)"] > 0,
         (df["Committed Gross Margin (USD)"] / df["Committed Revenue (USD)"]) * 100, np.nan)
     df["Achieved Gross Margin (%)"] = np.where(df["Achieved Revenue (USD)"] > 0,
@@ -434,18 +405,37 @@ else:
     df["Margin Realization (%)"] = np.where(df["Committed Gross Margin (USD)"] > 0,
         (df["Achieved Gross Margin (USD)"] / df["Committed Gross Margin (USD)"]) * 100, np.nan)
 
-    # ------------------ VISUALIZATIONS ------------------
-    import numpy as np
+    # ------------------ SIDEBAR FILTERS ------------------
+    st.sidebar.header("🔎 Filters")
+    month_year = st.sidebar.multiselect("Select Month-Year(s):", options=sorted(df["Month-Year"].dropna().unique()))
+    deal_managers = st.sidebar.multiselect("Select Deal Manager(s):", options=sorted(df["Deal Manager"].dropna().unique()))
+    countries = st.sidebar.multiselect("Select Country(ies):", options=sorted(df["Country"].dropna().unique()))
+    plants = st.sidebar.multiselect("Select Plant Type(s):", options=sorted(df["Plant Type"].dropna().unique()))
+    customers = st.sidebar.multiselect("Select Customer(s):", options=sorted(df["Customer"].dropna().unique()))
 
-    st.header("📅 Monthly Trends")
+    # Apply filters
+    filtered_df = df.copy()
+    if month_year:
+        filtered_df = filtered_df[filtered_df["Month-Year"].isin(month_year)]
+    if deal_managers:
+        filtered_df = filtered_df[filtered_df["Deal Manager"].isin(deal_managers)]
+    if countries:
+        filtered_df = filtered_df[filtered_df["Country"].isin(countries)]
+    if plants:
+        filtered_df = filtered_df[filtered_df["Plant Type"].isin(plants)]
+    if customers:
+        filtered_df = filtered_df[filtered_df["Customer"].isin(customers)]
 
-    # Step 1: Create sorting key
-    df["MonthYearSort"] = pd.to_datetime(df["Month-Year"], format="%b %Y")
+    # ------------------ VISUALIZATION ------------------
+    st.header("📅 Monthly Gross Margin & Margin Realization")
 
-    # Step 2: Aggregate monthly data
-    # Step 2: Filter rows where Achieved Revenue is not zero before aggregation
-    filtered_df = df[df["Achieved Revenue (USD)"] != 0]
+    # Add sorting column
+    filtered_df["MonthYearSort"] = pd.to_datetime(filtered_df["Month-Year"], format="%b %Y", errors='coerce')
 
+    # Filter out rows with zero Achieved Revenue (USD)
+    filtered_df = filtered_df[filtered_df["Achieved Revenue (USD)"] != 0]
+
+    # Aggregate
     monthly = (
         filtered_df.groupby("MonthYearSort")
         .agg({
@@ -459,7 +449,7 @@ else:
 
     monthly["Month-Year"] = monthly["MonthYearSort"].dt.strftime("%b %Y")
 
-    # Step 3: Calculate metrics safely
+    # Calculate %
     monthly["Committed Gross Margin (%)"] = np.where(
         monthly["Committed Revenue (USD)"] != 0,
         (monthly["Committed Gross Margin (USD)"] / monthly["Committed Revenue (USD)"]) * 100,
@@ -478,10 +468,7 @@ else:
         0
     )
 
-    # ✅ Filter out rows with zero Achieved Revenue
-    monthly = monthly[monthly["Achieved Revenue (USD)"] != 0]
-
-    # Step 4: Plot with tooltips
+    # Plot
     fig1 = go.Figure()
 
     fig1.add_trace(go.Bar(
@@ -532,6 +519,7 @@ else:
     )
 
     st.plotly_chart(fig1, use_container_width=True)
+
 
     # ------------------ TREEMAP: Category-wise & Manager-wise ------------------
     st.subheader("📘 Category-wise & Manager-wise Breakdown (Treemap)")
