@@ -502,7 +502,15 @@ else:
 
     # ------------------ SIDEBAR FILTERS ------------------
     st.sidebar.header("🔎 Filters")
-    month_year = st.sidebar.multiselect("Select Month-Year(s):", options=sorted(df["Month-Year"].dropna().unique()))
+
+    # Sort Month-Year chronologically and format for display
+    month_year_options = sorted(df["Month-Year"].dropna().unique())
+    month_year = st.sidebar.multiselect(
+        "Select Month-Year(s):",
+        options=month_year_options,
+        format_func=lambda x: x.strftime('%b %Y')  # Display as 'Apr 2024' etc.
+    )
+
     deal_managers = st.sidebar.multiselect("Select Deal Manager(s):", options=sorted(df["Deal Manager"].dropna().unique()))
     countries = st.sidebar.multiselect("Select Country(ies):", options=sorted(df["Country"].dropna().unique()))
     plants = st.sidebar.multiselect("Select Plant Type(s):", options=sorted(df["Plant Type"].dropna().unique()))
