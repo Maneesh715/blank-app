@@ -214,7 +214,7 @@ elif page == "📊 Revenue Dashboard":
 
     df["Month-Year"] = pd.to_datetime(df["Month-Year"], format="%b %Y", errors='coerce')
     df["New Customer"] = df["New Customer"].fillna(0).astype(int)
-    df["Committed Revenue"] = pd.to_numeric(df["Committed Revenue"], errors='coerce').fillna(0)
+    #df["Committed Revenue"] = pd.to_numeric(df["Committed Revenue"], errors='coerce').fillna(0)
     df["Achieved Revenue"] = pd.to_numeric(df["Achieved Revenue"], errors='coerce').fillna(0)
     #df["Conversion Rate (%)"] = df.apply(lambda row: (row["Achieved Revenue"] / row["Committed Revenue"] * 100) if row["Committed Revenue"] else 0, axis=1)
 
