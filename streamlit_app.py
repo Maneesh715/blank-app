@@ -68,9 +68,9 @@ if page == "📊 Orders Dashboard":
     )
     monthly_summary["Month-Year"] = monthly_summary["Month-Year"].dt.strftime("%b'%y")
     #monthly_summary["Conversion Rate (%)"] = monthly_summary.apply(
-        lambda row: (row["Achieved Orders"] / row["Committed Orders"] * 100) if row["Committed Orders"] else 0,
-        axis=1
-    )
+        #lambda row: (row["Achieved Orders"] / row["Committed Orders"] * 100) if row["Committed Orders"] else 0,
+        #axis=1
+    #)
 
     fig_orders = make_subplots(specs=[[{"secondary_y": True}]])
     fig_orders.add_trace(go.Bar(x=monthly_summary["Month-Year"], y=monthly_summary["Committed Orders"],
