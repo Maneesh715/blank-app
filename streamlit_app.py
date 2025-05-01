@@ -634,7 +634,7 @@ else:
     heatmap_data['Month-Year'] = heatmap_data['MonthYearSort'].dt.strftime('%b %Y')
 
     # Step 6: Pivot data for heatmap
-    heatmap_pivot = heatmap_data.pivot(index='Deal Manager', columns='Month-Year', values='Achieved Gross Margin (%)').fillna(0)
+    heatmap_pivot = heatmap_data.pivot(index='Deal Manager', columns='Month-Year', values='Achieved Gross Margin (%)').fillna(0).round(2)
 
     # Step 7: Sort columns chronologically
     sorted_columns = sorted(heatmap_pivot.columns, key=lambda x: pd.to_datetime(x, format='%b %Y'))
