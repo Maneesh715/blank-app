@@ -124,7 +124,7 @@ if page == "📊 Orders Dashboard":
     heatmap_data = filtered_df.groupby(['Deal Manager', 'Month_Year_Date'])['Achieved Orders'].sum().reset_index()
 
     # Pivot table
-    heatmap_pivot = heatmap_data.pivot(index='Deal Manager', columns='Month_Year_Date', values='Achieved Orders').fillna(0)
+    heatmap_pivot = heatmap_data.pivot(index='Deal Manager', columns='Month_Year_Date', values='Achieved Orders').fillna(0).round(2)
 
     # Sort columns chronologically
     heatmap_pivot = heatmap_pivot.sort_index(axis=1)
@@ -312,7 +312,7 @@ elif page == "📊 Revenue Dashboard":
     heatmap_data = filtered_df.groupby(['Deal Manager', 'Month_Year_Date'])['Achieved Revenue'].sum().reset_index()
 
     # Pivot table
-    heatmap_pivot = heatmap_data.pivot(index='Deal Manager', columns='Month_Year_Date', values='Achieved Revenue').fillna(0)
+    heatmap_pivot = heatmap_data.pivot(index='Deal Manager', columns='Month_Year_Date', values='Achieved Revenue').fillna(0).round(2)
 
     # Sort columns chronologically
     heatmap_pivot = heatmap_pivot.sort_index(axis=1)
