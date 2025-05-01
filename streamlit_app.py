@@ -116,12 +116,27 @@ if page == "📊 Orders Dashboard":
 
     # --- Heatmap with Drill-down ---
     st.subheader("🔥 Achieved Orders Heatmap (Manager × Month)")
-    heatmap_data = filtered_df.groupby(['Deal Manager', filtered_df['Month-Year'].dt.strftime('%b %Y')])['Achieved Orders'].sum().reset_index()
-    heatmap_pivot = heatmap_data.pivot(index='Deal Manager', columns='Month-Year', values='Achieved Orders').fillna(0)
 
+    # Convert to datetime for proper chronological sorting
+    filtered_df['Month_Year_Date'] = pd.to_datetime(filtered_df['Month-Year'], format='%b %Y')
+
+    # Group data
+    heatmap_data = filtered_df.groupby(['Deal Manager', 'Month_Year_Date'])['Achieved Orders'].sum().reset_index()
+
+    # Pivot table
+    heatmap_pivot = heatmap_data.pivot(index='Deal Manager', columns='Month_Year_Date', values='Achieved Orders').fillna(0)
+
+    # Sort columns chronologically
+    heatmap_pivot = heatmap_pivot.sort_index(axis=1)
+
+    # Add averages
     heatmap_pivot.loc['Average'] = heatmap_pivot.mean()
     heatmap_pivot['Average'] = heatmap_pivot.mean(axis=1)
 
+    # Format column labels back to 'Mon YYYY'
+    heatmap_pivot.columns = [col.strftime('%b %Y') if isinstance(col, pd.Timestamp) else col for col in heatmap_pivot.columns]
+
+    # Plot
     fig_heatmap = px.imshow(
         heatmap_pivot,
         labels=dict(x="Month-Year", y="Deal Manager", color="Achieved Orders"),
