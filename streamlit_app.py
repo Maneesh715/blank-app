@@ -137,13 +137,18 @@ if page == "📊 Orders Dashboard":
     heatmap_pivot.columns = [col.strftime('%b %Y') if isinstance(col, pd.Timestamp) else col for col in heatmap_pivot.columns]
 
     # Plot
+    # Create a text matrix with values rounded to 2 decimal places as strings
+    text_values = heatmap_pivot.applymap(lambda x: f"{x:.2f}")
+
+    # Plot
     fig_heatmap = px.imshow(
         heatmap_pivot,
         labels=dict(x="Month-Year", y="Deal Manager", color="Achieved Orders"),
         color_continuous_scale='Turbo',
         aspect="auto",
-        text_auto=True
+        text_auto=text_values  # 👈 Custom rounded text
     )
+
     fig_heatmap.update_layout(
         #title='Achieved Orders by Manager & Month (with Averages)',
         xaxis_side="top"
