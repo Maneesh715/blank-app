@@ -232,6 +232,9 @@ if page == "📊 Orders Dashboard":
         )
 
 elif page == "📊 Revenue Dashboard":
+    import pandas as pd
+    import streamlit as st
+
     SHEET_ID = "1VGd-4Ycj8mz8ZvDV2chLt4bG8DMjQ64fSLADkmXLsPo"
     SHEET_NAME = "Revenue"
     CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
@@ -244,20 +247,36 @@ elif page == "📊 Revenue Dashboard":
 
     df = load_data(CSV_URL)
 
+    # Convert 'Month-Year' to datetime format
     df["Month-Year"] = pd.to_datetime(df["Month-Year"], format="%b %Y", errors='coerce')
+
+    # Convert columns to appropriate types
     df["New Customer"] = df["New Customer"].fillna(0).astype(int)
     df["Committed Revenue"] = pd.to_numeric(df["Committed Revenue"], errors='coerce').fillna(0)
     df["Achieved Revenue"] = pd.to_numeric(df["Achieved Revenue"], errors='coerce').fillna(0)
-    #df["Conversion Rate (%)"] = df.apply(lambda row: (row["Achieved Revenue"] / row["Committed Revenue"] * 100) if row["Committed Revenue"] else 0, axis=1)
 
+    # Sidebar filters
     st.sidebar.header("🔎 Filters")
-    month_year = st.sidebar.multiselect("Select Month-Year(s):", options=sorted(df["Month-Year"].dropna().unique()))
+
+    # Sort Month-Year in chronological order for filtering
+    month_options = sorted(df["Month-Year"].dropna().unique())
+
+    # Convert back to 'Month-Year' string format for display purposes
+    month_year = st.sidebar.multiselect("Select Month-Year(s):", options=month_options, format_func=lambda x: x.strftime('%b %Y'))
+
+    # Filter the dataframe based on selected Month-Year
+    if month_year:
+        month_year_filtered = [pd.to_datetime(month, format='%b %Y') for month in month_year]
+        filtered_df = df[df["Month-Year"].isin(month_year_filtered)]
+    else:
+        filtered_df = df.copy()
+
+    # Filter based on other sidebar options
     deal_managers = st.sidebar.multiselect("Select Deal Manager(s):", options=sorted(df["Deal Manager"].dropna().unique()))
     countries = st.sidebar.multiselect("Select Country(ies):", options=sorted(df["Country"].dropna().unique()))
     plants = st.sidebar.multiselect("Select Plant Type(s):", options=sorted(df["Plant Type"].dropna().unique()))
     customers = st.sidebar.multiselect("Select Customer(s):", options=sorted(df["Customer"].dropna().unique()))
 
-    filtered_df = df.copy()
     if deal_managers:
         filtered_df = filtered_df[filtered_df["Deal Manager"].isin(deal_managers)]
     if countries:
@@ -267,11 +286,17 @@ elif page == "📊 Revenue Dashboard":
     if customers:
         filtered_df = filtered_df[filtered_df["Customer"].isin(customers)]
 
+    # Calculate metrics
     total_committed = filtered_df["Committed Revenue"].sum()
     total_achieved = filtered_df["Achieved Revenue"].sum()
-    #conversion_rate = (total_achieved / total_committed) * 100 if total_committed else 0
     new_customers = filtered_df["New Customer"].sum()
     average_revenue_size = (total_achieved / len(filtered_df)) if len(filtered_df) > 0 else 0
+
+    # Display metrics
+    #st.metric("Total Committed Revenue", f"${total_committed:,.0f}")
+    #st.metric("Total Achieved Revenue", f"${total_achieved:,.0f}")
+    #st.metric("New Customers", new_customers)
+    #st.metric("Average Revenue Size", f"${average_revenue_size:,.2f}")
 
     col1, col2, col3, col4, col5 = st.columns(5)
     col1.metric("📌 Total Committed Revenue", f"${total_committed:,.0f}")
