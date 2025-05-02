@@ -785,20 +785,60 @@ else:
     st.plotly_chart(fig_heatmap, use_container_width=True)
 
     # ------------------ REGION-WISE ANALYSIS ------------------
+    import streamlit as st
+    import plotly.express as px
+    import pandas as pd
+
     st.subheader("🗺️ Region-wise Achieved Gross Margin (%)")
-    country_data = filtered_df.groupby('Country')['Achieved Gross Margin (%)'].sum().reset_index()
+
+    # Step 1: Calculate Achieved Gross Margin per row
+    filtered_df['Achieved Gross Margin (%)'] = (
+        (filtered_df['Achieved Revenue'] - (
+            filtered_df['Achieved COGS'] +
+            filtered_df['Achieved Logistics'] +
+            filtered_df['Achieved P&F'] +
+            filtered_df['Achieved Associate Payment']
+        )) / filtered_df['Achieved Revenue']
+    ) * 100
+
+    # Step 2: Compute weighted average Gross Margin per country
+    # Weighted by Achieved Revenue
+    country_data = filtered_df.groupby('Country').apply(
+        lambda x: ((
+            x['Achieved Revenue'] - (
+                x['Achieved COGS'] +
+                x['Achieved Logistics'] +
+                x['Achieved P&F'] +
+                x['Achieved Associate Payment']
+            )
+        ).sum() / x['Achieved Revenue'].sum()) * 100
+    ).reset_index(name='Achieved Gross Margin (%)')
+
+    # Step 3: Create choropleth map
     fig_choropleth = px.choropleth(
         country_data,
         locations='Country',
         locationmode='country names',
         color='Achieved Gross Margin (%)',
         color_continuous_scale='Plasma',
-        title='Achieved Gross Margin (%) by Country',
         hover_name='Country'
     )
-    fig_choropleth.update_geos(showframe=True, showcoastlines=True, projection_type="natural earth")
-    fig_choropleth.update_layout(margin={"r":0,"t":50,"l":0,"b":0})
+
+    # Step 4: Update map visuals
+    fig_choropleth.update_geos(
+        showframe=True,
+        showcoastlines=True,
+        projection_type="natural earth"
+    )
+
+    fig_choropleth.update_layout(
+        title_text='Achieved Gross Margin (%) by Country',
+        margin={"r": 0, "t": 50, "l": 0, "b": 0}
+    )
+
+    # Step 5: Render in Streamlit
     st.plotly_chart(fig_choropleth, use_container_width=True)
+
 
     # ------------------ END ------------------
 
