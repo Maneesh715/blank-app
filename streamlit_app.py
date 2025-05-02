@@ -614,14 +614,14 @@ else:
         hovertemplate="Month: %{x}<br>Achieved GM: %{y:.1f}%"
     ))
 
-    # Margin Realization in USD (Line Plot, right axis)
+    # Achieved Gross Margin in USD (Line Plot, right axis)
     fig1.add_trace(go.Scatter(
         x=monthly["Month-Year"],
         y=monthly["Achieved Gross Margin (USD)"],
         name="Achieved GM (USD)",
         mode="lines+markers",
         yaxis="y2",
-        line=dict(color="black"),
+        line=dict(color="orange"),
         hovertemplate="Month: %{x}<br>Achieved GM (USD): $%{y:,.0f}"
     ))
 
