@@ -87,7 +87,7 @@ if page == "📊 Orders Dashboard":
     col1, col2, col3, col4, col5 = st.columns(5)
     col1.metric("📌 Total Committed Orders", f"${total_committed:,.0f}")
     col2.metric("✅ Total Achieved Orders", f"${total_achieved:,.0f}")
-    #col3.metric("🎯 Conversion Rate", f"{conversion_rate:.2f}%")
+    col3.metric("🎯 Conversion Rate", f"{conversion_rate:.2f}%")
     col4.metric("🆕 New Customers", f"{new_customers}")
     col5.metric("📦 Avg. Order Size", f"${average_order_size:,.0f}")
 
@@ -291,6 +291,7 @@ elif page == "📊 Revenue Dashboard":
     total_achieved = filtered_df["Achieved Revenue"].sum()
     new_customers = filtered_df["New Customer"].sum()
     average_revenue_size = (total_achieved / len(filtered_df)) if len(filtered_df) > 0 else 0
+    conversion_rate = (total_achieved / total_committed) * 100 if total_committed else 0
 
     # Display metrics
     #st.metric("Total Committed Revenue", f"${total_committed:,.0f}")
