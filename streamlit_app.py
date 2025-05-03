@@ -135,7 +135,7 @@ if page == "📊 Orders Dashboard":
         path=['Deal Manager', 'Plant Type', 'Customer'],
         values='Achieved Orders',
         color='Achieved Orders',
-        color_continuous_scale='Tealgrn',
+        color_continuous_scale='Sunsetdark',
         custom_data=['Deal Manager', 'Plant Type', 'Customer', 'Achieved Orders'],
         title='Category-wise & Manager-wise Breakdown'
     )
