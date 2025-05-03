@@ -36,9 +36,9 @@ if page == "📊 Orders Dashboard":
     df["Achieved Orders"] = pd.to_numeric(df["Achieved Orders"], errors='coerce').fillna(0)
 
     # Calculate conversion rate
-    #df["Conversion Rate (%)"] = df.apply(
-        #lambda row: (row["Achieved Orders"] / row["Committed Orders"] * 100) if row["Committed Orders"] else 0, axis=1
-    #)
+    df["Conversion Rate (%)"] = df.apply(
+        lambda row: (row["Achieved Orders"] / row["Committed Orders"] * 100) if row["Committed Orders"] else 0, axis=1
+    )
 
     st.sidebar.header("🔎 Filters")
 
@@ -75,7 +75,7 @@ if page == "📊 Orders Dashboard":
     total_achieved = filtered_df["Achieved Orders"].sum()
     new_customers = filtered_df["New Customer"].sum()
     average_order_size = (total_achieved / len(filtered_df)) if len(filtered_df) > 0 else 0
-    #conversion_rate = (total_achieved / total_committed) * 100 if total_committed else 0
+    conversion_rate = (total_achieved / total_committed) * 100 if total_committed else 0
 
     # Display metrics
     #st.metric("Total Committed Orders", f"{total_committed:,.0f}")
@@ -98,10 +98,10 @@ if page == "📊 Orders Dashboard":
         .reset_index()
     )
     monthly_summary["Month-Year"] = monthly_summary["Month-Year"].dt.strftime("%b'%y")
-    #monthly_summary["Conversion Rate (%)"] = monthly_summary.apply(
-        #lambda row: (row["Achieved Orders"] / row["Committed Orders"] * 100) if row["Committed Orders"] else 0,
-        #axis=1
-    #)
+    monthly_summary["Conversion Rate (%)"] = monthly_summary.apply(
+        lambda row: (row["Achieved Orders"] / row["Committed Orders"] * 100) if row["Committed Orders"] else 0,
+        axis=1
+    )
 
     fig_orders = make_subplots(specs=[[{"secondary_y": True}]])
     fig_orders.add_trace(go.Bar(x=monthly_summary["Month-Year"], y=monthly_summary["Committed Orders"],
@@ -110,9 +110,9 @@ if page == "📊 Orders Dashboard":
     fig_orders.add_trace(go.Bar(x=monthly_summary["Month-Year"], y=monthly_summary["Achieved Orders"],
                                 name="Achieved Orders", marker_color="#1d3557", text=monthly_summary["Achieved Orders"], textposition='outside'),
                          secondary_y=False)
-    #fig_orders.add_trace(go.Scatter(x=monthly_summary["Month-Year"], y=monthly_summary["Conversion Rate (%)"],
-                                    #name="Conversion Rate (%)", mode='lines+markers', line=dict(color="#e76f51", width=3), marker=dict(size=6)),
-                         #secondary_y=True)
+    fig_orders.add_trace(go.Scatter(x=monthly_summary["Month-Year"], y=monthly_summary["Conversion Rate (%)"],
+                                    name="Conversion Rate (%)", mode='lines+markers', line=dict(color="#e76f51", width=3), marker=dict(size=6)),
+                         secondary_y=True)
 
     fig_orders.update_layout(
         title="📊 Monthly Orders",
@@ -124,7 +124,7 @@ if page == "📊 Orders Dashboard":
         height=500
     )
     fig_orders.update_yaxes(title_text="Orders (USD)", secondary_y=False)
-    #fig_orders.update_yaxes(title_text="Conversion Rate (%)", secondary_y=True)
+    fig_orders.update_yaxes(title_text="Conversion Rate (%)", secondary_y=True)
 
     st.plotly_chart(fig_orders, use_container_width=True)
 
@@ -301,21 +301,21 @@ elif page == "📊 Revenue Dashboard":
     col1, col2, col3, col4, col5 = st.columns(5)
     col1.metric("📌 Total Committed Revenue", f"${total_committed:,.0f}")
     col2.metric("✅ Total Achieved Revenue", f"${total_achieved:,.0f}")
-    #col3.metric("🎯 Conversion Rate", f"{conversion_rate:.2f}%")
+    col3.metric("🎯 Conversion Rate", f"{conversion_rate:.2f}%")
     col4.metric("🆕 New Customers", f"{new_customers}")
     col5.metric("📦 Avg. Revenue Size", f"${average_revenue_size:,.0f}")
 
-    # --- Monthly Orders Comparison ---
+    # --- Monthly Revenue Comparison ---
     monthly_summary = (
         filtered_df.groupby(filtered_df["Month-Year"].dt.to_period("M"))[["Committed Revenue", "Achieved Revenue"]]
         .sum()
         .reset_index()
     )
     monthly_summary["Month-Year"] = monthly_summary["Month-Year"].dt.strftime("%b'%y")
-    #monthly_summary["Conversion Rate (%)"] = monthly_summary.apply(
-        #lambda row: (row["Achieved Revenue"] / row["Committed Revenue"] * 100) if row["Committed Revenue"] else 0,
-        #axis=1
-    #)
+    monthly_summary["Conversion Rate (%)"] = monthly_summary.apply(
+        lambda row: (row["Achieved Revenue"] / row["Committed Revenue"] * 100) if row["Committed Revenue"] else 0,
+        axis=1
+    )
 
     fig_revenue = make_subplots(specs=[[{"secondary_y": True}]])
     fig_revenue.add_trace(go.Bar(x=monthly_summary["Month-Year"], y=monthly_summary["Committed Revenue"],
@@ -324,9 +324,9 @@ elif page == "📊 Revenue Dashboard":
     fig_revenue.add_trace(go.Bar(x=monthly_summary["Month-Year"], y=monthly_summary["Achieved Revenue"],
                                 name="Achieved Revenue", marker_color="#1d3557", text=monthly_summary["Achieved Revenue"], textposition='outside'),
                          secondary_y=False)
-    #fig_revenue.add_trace(go.Scatter(x=monthly_summary["Month-Year"], y=monthly_summary["Conversion Rate (%)"],
-                                    #name="Conversion Rate (%)", mode='lines+markers', line=dict(color="#e76f51", width=3), marker=dict(size=6)),
-                         #secondary_y=True)
+    fig_revenue.add_trace(go.Scatter(x=monthly_summary["Month-Year"], y=monthly_summary["Conversion Rate (%)"],
+                                    name="Conversion Rate (%)", mode='lines+markers', line=dict(color="#e76f51", width=3), marker=dict(size=6)),
+                         secondary_y=True)
 
     fig_revenue.update_layout(
         title="📊 Monthly Revenue",
@@ -585,11 +585,11 @@ else:
         0
     )
 
-    monthly["Margin Realization (%)"] = np.where(
-        (monthly["Committed Gross Margin (USD)"] != 0) & (monthly["Achieved Gross Margin (USD)"] != 0),
-        (monthly["Achieved Gross Margin (USD)"] / monthly["Committed Gross Margin (USD)"]) * 100,
-        0
-    )
+    #monthly["Margin Realization (%)"] = np.where(
+        #(monthly["Committed Gross Margin (USD)"] != 0) & (monthly["Achieved Gross Margin (USD)"] != 0),
+        #(monthly["Achieved Gross Margin (USD)"] / monthly["Committed Gross Margin (USD)"]) * 100,
+        #0
+    #)
 
     # Plot
     fig1 = go.Figure()
