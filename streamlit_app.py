@@ -350,7 +350,7 @@ elif page == "📊 Revenue Dashboard":
         path=['Deal Manager', 'Plant Type', 'Customer'],
         values='Achieved Revenue',
         color='Achieved Revenue',
-        color_continuous_scale='Viridis',
+        color_continuous_scale='Plasma',
         custom_data=['Deal Manager', 'Plant Type', 'Customer', 'Achieved Revenue'],
         title='Category-wise & Manager-wise Breakdown'
     )
@@ -671,7 +671,7 @@ else:
         path=['Deal Manager', 'Plant Type', 'Customer'],
         values='Achieved Gross Margin Display',
         color='Achieved Gross Margin (%)',
-        color_continuous_scale='Viridis',
+        color_continuous_scale='Plasma',
         custom_data=['Deal Manager', 'Plant Type', 'Customer', 'Achieved Gross Margin (%)'],
         title='Category-wise & Manager-wise Breakdown'
     )
