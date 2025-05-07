@@ -11,11 +11,11 @@ st.set_page_config(page_title="Worldref Dashboard", layout="wide")
 st.sidebar.title("📁 Navigation")
 page = st.sidebar.radio(
     "Select Dashboard",
-    ["📊 Orders Dashboard", "📊 Revenue Dashboard", "📊 Gross Margin Dashboard"],
+    ["📊 Orders", "📊 Revenue", "📊 Gross Margin"],
     index=0  # Default to first dashboard
 )
 
-if page == "📊 Orders Dashboard":
+if page == "📊 Orders":
     import pandas as pd
     import streamlit as st
 
@@ -241,7 +241,7 @@ if page == "📊 Orders Dashboard":
             mime="text/csv"
         )
 
-elif page == "📊 Revenue Dashboard":
+elif page == "📊 Revenue":
     import pandas as pd
     import streamlit as st
 
@@ -467,8 +467,8 @@ elif page == "📊 Revenue Dashboard":
 
 else:
     # ------------------ SETTINGS ------------------
-    #st.set_page_config(page_title="Gross Margin Dashboard", layout="wide")
-    st.title("📊 Gross Margin Dashboard")
+    #st.set_page_config(page_title="Gross Margin", layout="wide")
+    st.title("📊 Gross Margin")
 
     # ------------------ DATA LOADING ------------------
     import streamlit as st
@@ -571,7 +571,7 @@ else:
     import numpy as np
     import plotly.graph_objects as go
 
-    st.header("📅 Monthly Gross Margin & Margin Realization")
+    st.header("📅 Monthly Gross Margin")
 
     # Add sorting column
     filtered_df["MonthYearSort"] = pd.to_datetime(filtered_df["Month-Year"], format="%b %Y", errors='coerce')
