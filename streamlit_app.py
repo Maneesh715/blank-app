@@ -300,7 +300,12 @@ elif page == "📊 Revenue":
     total_committed = filtered_df["Committed Revenue"].sum()
     total_achieved = filtered_df["Achieved Revenue"].sum()
     new_customers = filtered_df["New Customer"].sum()
-    average_revenue_size = (total_achieved / len(filtered_df)) if len(filtered_df) > 0 else 0
+    achieved_nonzero_df = filtered_df[filtered_df["Achieved Revenue"] > 0]
+    nonzero_achieved_count = len(achieved_nonzero_df)
+    average_revenue_size = (
+        achieved_nonzero_df["Achieved Revenue"].sum() / nonzero_achieved_count
+        if nonzero_achieved_count > 0 else 0
+    )
     conversion_rate = (total_achieved / total_committed) * 100 if total_committed else 0
 
     # Display metrics
