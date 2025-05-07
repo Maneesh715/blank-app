@@ -74,8 +74,10 @@ if page == "📊 Orders Dashboard":
     total_committed = filtered_df["Committed Orders"].sum()
     total_achieved = filtered_df["Achieved Orders"].sum()
     new_customers = filtered_df["New Customer"].sum()
-    average_order_size = (total_achieved / len(filtered_df)) if len(filtered_df) > 0 else 0
+    non_null_achieved_count = filtered_df["Achieved Orders"].notnull().sum()
+    average_order_size = (total_achieved / non_null_achieved_count) if non_null_achieved_count > 0 else 0
     conversion_rate = (total_achieved / total_committed) * 100 if total_committed else 0
+
 
     # Display metrics
     #st.metric("Total Committed Orders", f"{total_committed:,.0f}")
