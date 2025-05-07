@@ -29,7 +29,7 @@ if page == "📊 Orders Dashboard":
 
     # Convert 'Month-Year' to datetime
     df["Month-Year"] = pd.to_datetime(df["Month-Year"], format="%b %Y")
-
+    
     # Convert columns to appropriate types
     df["New Customer"] = df["New Customer"].fillna(0).astype(int)
     df["Committed Orders"] = pd.to_numeric(df["Committed Orders"], errors='coerce').fillna(0)
@@ -51,7 +51,7 @@ if page == "📊 Orders Dashboard":
     # Filter the dataframe based on selected Month-Year
     if month_year:
         month_year_filtered = [pd.to_datetime(month, format='%b %Y') for month in month_year]
-        filtered_df = df[df["Month-Year"].isin(month_year_filtered)]
+        filtered_df = df[df["Month-Year"].isin(month_year_filtered)].copy()
     else:
         filtered_df = df.copy()
 
