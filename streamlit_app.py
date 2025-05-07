@@ -9,7 +9,11 @@ from io import BytesIO
 st.set_page_config(page_title="Worldref Dashboard", layout="wide")
 
 st.sidebar.title("📁 Navigation")
-page = st.sidebar.selectbox("Go to", ["📊 Orders Dashboard", "📊 Revenue Dashboard", "📊 Gross Margin Dashboard"])
+page = st.sidebar.radio(
+    "Select Dashboard",
+    ["📊 Orders Dashboard", "📊 Revenue Dashboard", "📊 Gross Margin Dashboard"],
+    index=0  # Default to first dashboard
+)
 
 if page == "📊 Orders Dashboard":
     import pandas as pd
