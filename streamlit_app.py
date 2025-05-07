@@ -353,7 +353,7 @@ elif page == "📊 Revenue Dashboard":
     st.subheader("📘 Category-wise & Manager-wise Breakdown (Treemap)")
 
     # Drop rows with missing key hierarchy values
-    treemap_df = filtered_df.dropna(subset=["Deal Manager", "Plant Type", "Customer", "Achieved Orders"]).copy()
+    treemap_df = filtered_df.dropna(subset=["Deal Manager", "Plant Type", "Customer", "Achieved Revenue"]).copy()
 
     # Ensure all path columns are strings
     treemap_df["Deal Manager"] = treemap_df["Deal Manager"].astype(str)
@@ -361,15 +361,15 @@ elif page == "📊 Revenue Dashboard":
     treemap_df["Customer"] = treemap_df["Customer"].astype(str)
 
     # Also ensure Achieved Orders is numeric and non-negative
-    treemap_df["Achieved Orders"] = pd.to_numeric(treemap_df["Achieved Orders"], errors='coerce').fillna(0)
-    treemap_df = treemap_df[treemap_df["Achieved Orders"] > 0]
+    treemap_df["Achieved Revenue"] = pd.to_numeric(treemap_df["Achieved Revenue"], errors='coerce').fillna(0)
+    treemap_df = treemap_df[treemap_df["Achieved Revenue"] > 0]
 
     # Create the treemap
     fig_treemap = px.treemap(
         treemap_df,
         path=['Deal Manager', 'Plant Type', 'Customer'],
-        values='Achieved Orders',
-        color='Achieved Orders',
+        values='Achieved Revenue',
+        color='Achieved Revenue',
         color_continuous_scale='Plasma',
         title='Category-wise & Manager-wise Breakdown'
     )
