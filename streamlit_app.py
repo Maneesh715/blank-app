@@ -351,20 +351,30 @@ elif page == "📊 Revenue Dashboard":
 
     # --- Treemap with Drill-down ---
     st.subheader("📘 Category-wise & Manager-wise Breakdown (Treemap)")
+
+    # Drop rows with missing key hierarchy values
+    treemap_df = filtered_df.dropna(subset=["Deal Manager", "Plant Type", "Customer", "Achieved Orders"]).copy()
+
+    # Ensure all path columns are strings
+    treemap_df["Deal Manager"] = treemap_df["Deal Manager"].astype(str)
+    treemap_df["Plant Type"] = treemap_df["Plant Type"].astype(str)
+    treemap_df["Customer"] = treemap_df["Customer"].astype(str)
+
+    # Also ensure Achieved Orders is numeric and non-negative
+    treemap_df["Achieved Orders"] = pd.to_numeric(treemap_df["Achieved Orders"], errors='coerce').fillna(0)
+    treemap_df = treemap_df[treemap_df["Achieved Orders"] > 0]
+
+    # Create the treemap
     fig_treemap = px.treemap(
-        filtered_df,
+        treemap_df,
         path=['Deal Manager', 'Plant Type', 'Customer'],
-        values='Achieved Revenue',
-        color='Achieved Revenue',
+        values='Achieved Orders',
+        color='Achieved Orders',
         color_continuous_scale='Plasma',
-        custom_data=['Deal Manager', 'Plant Type', 'Customer', 'Achieved Revenue'],
         title='Category-wise & Manager-wise Breakdown'
     )
     fig_treemap.update_traces(root_color="lightgrey")
     st.plotly_chart(fig_treemap, use_container_width=True)
-
-    #selected_treemap = st.plotly_chart(fig_treemap, use_container_width=True)
-    #st.info("🖱️ Click a Treemap section to drill down — feature for future interactivity.")
 
     # --- Heatmap with Drill-down ---
     st.subheader("🔥 Achieved Revenue Heatmap (Manager × Month)")
