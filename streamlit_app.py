@@ -140,6 +140,10 @@ if page == "📊 Orders":
 
     # --- Treemap with Drill-down ---
     st.subheader("📘 Category-wise & Manager-wise Breakdown (Treemap)")
+
+    # Remove rows with missing hierarchy levels
+    filtered_df = filtered_df.dropna(subset=['Deal Manager', 'Plant Type', 'Customer'])
+
     fig_treemap = px.treemap(
         filtered_df,
         path=['Deal Manager', 'Plant Type', 'Customer'],
@@ -150,10 +154,8 @@ if page == "📊 Orders":
         title='Category-wise & Manager-wise Breakdown'
     )
     fig_treemap.update_traces(root_color="lightgrey")
-    st.plotly_chart(fig_treemap, use_container_width=True)
 
-    #selected_treemap = st.plotly_chart(fig_treemap, use_container_width=True)
-    #st.info("🖱️ Click a Treemap section to drill down — feature for future interactivity.")
+    st.plotly_chart(fig_treemap, use_container_width=True)
 
     # --- Heatmap with Drill-down ---
     st.subheader("🔥 Achieved Orders Heatmap (Manager × Month)")
