@@ -32,7 +32,7 @@ if page == "📊 Orders":
     df = load_data(CSV_URL)
 
     # Convert 'Month-Year' to datetime
-    df["Month-Year"] = pd.to_datetime(df["Month-Year"], format="%b %Y")
+    df["Month-Year"] = pd.to_datetime(df["Month-Year"], format='mixed', errors='coerce')
     
     # Convert columns to appropriate types
     df["New Customer"] = df["New Customer"].fillna(0).astype(int)
