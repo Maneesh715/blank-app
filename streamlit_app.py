@@ -40,7 +40,7 @@ if page == "📊 Orders":
     df["Achieved Orders"] = pd.to_numeric(df["Achieved Orders"], errors='coerce').fillna(0)
 
     # Calculate conversion rate
-    df["Conversion Rate (%)"] = df.apply(
+    #df["Conversion Rate (%)"] = df.apply(
         lambda row: (row["Achieved Orders"] / row["Committed Orders"] * 100) if row["Committed Orders"] else 0, axis=1
     )
 
@@ -84,7 +84,7 @@ if page == "📊 Orders":
         achieved_nonzero_df["Achieved Orders"].sum() / nonzero_achieved_count
         if nonzero_achieved_count > 0 else 0
     )
-    conversion_rate = (total_achieved / total_committed) * 100 if total_committed else 0
+    #conversion_rate = (total_achieved / total_committed) * 100 if total_committed else 0
 
 
     # Display metrics
@@ -97,7 +97,7 @@ if page == "📊 Orders":
     col1, col2, col3, col4, col5 = st.columns(5)
     col1.metric("📌 Total Committed Orders", f"${total_committed:,.0f}")
     col2.metric("✅ Total Achieved Orders", f"${total_achieved:,.0f}")
-    col3.metric("🎯 Conversion Rate", f"{conversion_rate:.2f}%")
+    #col3.metric("🎯 Conversion Rate", f"{conversion_rate:.2f}%")
     col4.metric("🆕 New Customers", f"{new_customers}")
     col5.metric("📦 Avg. Order Size", f"${average_order_size:,.0f}")
 
@@ -108,7 +108,7 @@ if page == "📊 Orders":
         .reset_index()
     )
     monthly_summary["Month-Year"] = monthly_summary["Month-Year"].dt.strftime("%b'%y")
-    monthly_summary["Conversion Rate (%)"] = monthly_summary.apply(
+    #monthly_summary["Conversion Rate (%)"] = monthly_summary.apply(
         lambda row: (row["Achieved Orders"] / row["Committed Orders"] * 100) if row["Committed Orders"] else 0,
         axis=1
     )
@@ -134,7 +134,7 @@ if page == "📊 Orders":
         height=500
     )
     fig_orders.update_yaxes(title_text="Orders (USD)", secondary_y=False)
-    fig_orders.update_yaxes(title_text="Conversion Rate (%)", secondary_y=True)
+    #fig_orders.update_yaxes(title_text="Conversion Rate (%)", secondary_y=True)
 
     st.plotly_chart(fig_orders, use_container_width=True)
 
@@ -308,7 +308,7 @@ elif page == "📊 Revenue":
         achieved_nonzero_df["Achieved Revenue"].sum() / nonzero_achieved_count
         if nonzero_achieved_count > 0 else 0
     )
-    conversion_rate = (total_achieved / total_committed) * 100 if total_committed else 0
+    #conversion_rate = (total_achieved / total_committed) * 100 if total_committed else 0
 
     # Display metrics
     #st.metric("Total Committed Revenue", f"${total_committed:,.0f}")
@@ -319,7 +319,7 @@ elif page == "📊 Revenue":
     col1, col2, col3, col4, col5 = st.columns(5)
     col1.metric("📌 Total Committed Revenue", f"${total_committed:,.0f}")
     col2.metric("✅ Total Achieved Revenue", f"${total_achieved:,.0f}")
-    col3.metric("🎯 Conversion Rate", f"{conversion_rate:.2f}%")
+    #col3.metric("🎯 Conversion Rate", f"{conversion_rate:.2f}%")
     col4.metric("🆕 New Customers", f"{new_customers}")
     col5.metric("📦 Avg. Revenue Size", f"${average_revenue_size:,.0f}")
 
@@ -330,7 +330,7 @@ elif page == "📊 Revenue":
         .reset_index()
     )
     monthly_summary["Month-Year"] = monthly_summary["Month-Year"].dt.strftime("%b'%y")
-    monthly_summary["Conversion Rate (%)"] = monthly_summary.apply(
+    #monthly_summary["Conversion Rate (%)"] = monthly_summary.apply(
         lambda row: (row["Achieved Revenue"] / row["Committed Revenue"] * 100) if row["Committed Revenue"] else 0,
         axis=1
     )
@@ -517,8 +517,8 @@ else:
         (df["Committed Gross Margin (USD)"] / df["Committed Revenue (USD)"]) * 100, np.nan)
     df["Achieved Gross Margin (%)"] = np.where(df["Achieved Revenue (USD)"] > 0,
         (df["Achieved Gross Margin (USD)"] / df["Achieved Revenue (USD)"]) * 100, np.nan)
-    df["Margin Realization (%)"] = np.where(df["Committed Gross Margin (USD)"] > 0,
-        (df["Achieved Gross Margin (USD)"] / df["Committed Gross Margin (USD)"]) * 100, np.nan)
+    #df["Margin Realization (%)"] = np.where(df["Committed Gross Margin (USD)"] > 0,
+        #(df["Achieved Gross Margin (USD)"] / df["Committed Gross Margin (USD)"]) * 100, np.nan)
 
     # Display KPI cards in 3 columns
     #col1, col2, col3 = st.columns(3)
