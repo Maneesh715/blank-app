@@ -331,9 +331,9 @@ elif page == "📊 Revenue":
     )
     monthly_summary["Month-Year"] = monthly_summary["Month-Year"].dt.strftime("%b'%y")
     #monthly_summary["Conversion Rate (%)"] = monthly_summary.apply(
-        lambda row: (row["Achieved Revenue"] / row["Committed Revenue"] * 100) if row["Committed Revenue"] else 0,
-        axis=1
-    )
+        #lambda row: (row["Achieved Revenue"] / row["Committed Revenue"] * 100) if row["Committed Revenue"] else 0,
+        #axis=1
+    #)
 
     fig_revenue = make_subplots(specs=[[{"secondary_y": True}]])
     fig_revenue.add_trace(go.Bar(x=monthly_summary["Month-Year"], y=monthly_summary["Committed Revenue"],
