@@ -41,8 +41,8 @@ if page == "📊 Orders":
 
     # Calculate conversion rate
     #df["Conversion Rate (%)"] = df.apply(
-        lambda row: (row["Achieved Orders"] / row["Committed Orders"] * 100) if row["Committed Orders"] else 0, axis=1
-    )
+        #lambda row: (row["Achieved Orders"] / row["Committed Orders"] * 100) if row["Committed Orders"] else 0, axis=1
+    #)
 
     st.sidebar.header("🔎 Filters")
 
