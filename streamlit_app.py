@@ -119,7 +119,7 @@ if page == "📊 Orders":
     # --- Hero Customers Section ---
     st.subheader("🏅 Hero Customers (Quarter-wise)")
 
-    HERO_SHEET_ID = "YOUR_SHEET_ID_HERE"  # Replace with actual sheet ID
+    HERO_SHEET_ID = "1VGd-4Ycj8mz8ZvDV2chLt4bG8DMjQ64fSLADkmXLsPo"
     HERO_SHEET_NAME = quote("Hero Customers")
     HERO_CSV_URL = f"https://docs.google.com/spreadsheets/d/{HERO_SHEET_ID}/gviz/tq?tqx=out:csv&sheet={HERO_SHEET_NAME}"
 
