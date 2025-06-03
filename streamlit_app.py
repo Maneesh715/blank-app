@@ -5,6 +5,7 @@ import plotly.express as px
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from io import BytesIO
+from urllib.parse import quote
 
 st.set_page_config(page_title="Worldref Dashboard", layout="wide")
 
@@ -119,7 +120,7 @@ if page == "📊 Orders":
     st.subheader("🏅 Hero Customers (Quarter-wise)")
 
     HERO_SHEET_ID = "YOUR_SHEET_ID_HERE"  # Replace with actual sheet ID
-    HERO_SHEET_NAME = "Hero%20Customers"
+    HERO_SHEET_NAME = quote("Hero Customers")
     HERO_CSV_URL = f"https://docs.google.com/spreadsheets/d/{HERO_SHEET_ID}/gviz/tq?tqx=out:csv&sheet={HERO_SHEET_NAME}"
 
     @st.cache_data
