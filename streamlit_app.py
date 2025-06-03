@@ -20,7 +20,7 @@ if page == "📊 Orders":
     import streamlit as st
 
     SHEET_ID = "1VGd-4Ycj8mz8ZvDV2chLt4bG8DMjQ64fSLADkmXLsPo"
-    SHEET_NAME = "Sheet1"
+    SHEET_NAME = "Orders"
     CSV_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
 
     @st.cache_data
@@ -38,11 +38,6 @@ if page == "📊 Orders":
     df["New Customer"] = df["New Customer"].fillna(0).astype(int)
     df["Committed Orders"] = pd.to_numeric(df["Committed Orders"], errors='coerce').fillna(0)
     df["Achieved Orders"] = pd.to_numeric(df["Achieved Orders"], errors='coerce').fillna(0)
-
-    # Calculate conversion rate
-    #df["Conversion Rate (%)"] = df.apply(
-        #lambda row: (row["Achieved Orders"] / row["Committed Orders"] * 100) if row["Committed Orders"] else 0, axis=1
-    #)
 
     st.sidebar.header("🔎 Filters")
 
@@ -84,20 +79,10 @@ if page == "📊 Orders":
         achieved_nonzero_df["Achieved Orders"].sum() / nonzero_achieved_count
         if nonzero_achieved_count > 0 else 0
     )
-    #conversion_rate = (total_achieved / total_committed) * 100 if total_committed else 0
-
-
-    # Display metrics
-    #st.metric("Total Committed Orders", f"{total_committed:,.0f}")
-    #st.metric("Total Achieved Orders", f"{total_achieved:,.0f}")
-    #st.metric("New Customers", new_customers)
-    #st.metric("Average Order Size", f"{average_order_size:,.2f}")
-    #st.metric("Conversion Rate (%)", f"{conversion_rate:.2f}%")
 
     col1, col2, col3, col4, col5 = st.columns(5)
     col1.metric("📌 Total Committed Orders", f"${total_committed:,.0f}")
     col2.metric("✅ Total Achieved Orders", f"${total_achieved:,.0f}")
-    #col3.metric("🎯 Conversion Rate", f"{conversion_rate:.2f}%")
     col4.metric("🆕 New Customers", f"{new_customers}")
     col5.metric("📦 Avg. Order Size", f"${average_order_size:,.0f}")
 
@@ -108,10 +93,6 @@ if page == "📊 Orders":
         .reset_index()
     )
     monthly_summary["Month-Year"] = monthly_summary["Month-Year"].dt.strftime("%b'%y")
-    #monthly_summary["Conversion Rate (%)"] = monthly_summary.apply(
-        #lambda row: (row["Achieved Orders"] / row["Committed Orders"] * 100) if row["Committed Orders"] else 0,
-        #axis=1
-    #)
 
     fig_orders = make_subplots(specs=[[{"secondary_y": True}]])
     fig_orders.add_trace(go.Bar(x=monthly_summary["Month-Year"], y=monthly_summary["Committed Orders"],
@@ -120,9 +101,6 @@ if page == "📊 Orders":
     fig_orders.add_trace(go.Bar(x=monthly_summary["Month-Year"], y=monthly_summary["Achieved Orders"],
                                 name="Achieved Orders", marker_color="#1d3557", text=monthly_summary["Achieved Orders"], textposition='outside'),
                          secondary_y=False)
-    #fig_orders.add_trace(go.Scatter(x=monthly_summary["Month-Year"], y=monthly_summary["Conversion Rate (%)"],
-                                    #name="Conversion Rate (%)", mode='lines+markers', line=dict(color="#e76f51", width=3), marker=dict(size=6)),
-                         #secondary_y=True)
 
     fig_orders.update_layout(
         title="📊 Monthly Orders",
@@ -134,9 +112,49 @@ if page == "📊 Orders":
         height=500
     )
     fig_orders.update_yaxes(title_text="Orders (USD)", secondary_y=False)
-    #fig_orders.update_yaxes(title_text="Conversion Rate (%)", secondary_y=True)
 
     st.plotly_chart(fig_orders, use_container_width=True)
+
+    # --- Hero Customers Section ---
+    st.subheader("🏅 Hero Customers (Quarter-wise)")
+
+    HERO_SHEET_ID = "YOUR_SHEET_ID_HERE"  # Replace with actual sheet ID
+    HERO_SHEET_NAME = "Hero Customers"
+    HERO_CSV_URL = f"https://docs.google.com/spreadsheets/d/{HERO_SHEET_ID}/gviz/tq?tqx=out:csv&sheet={HERO_SHEET_NAME}"
+
+    @st.cache_data
+    def load_hero_data(url):
+        df = pd.read_csv(url)
+        df.columns = df.columns.str.strip()
+        df['Month-Year'] = pd.to_datetime(df['Month-Year'], format='mixed', errors='coerce')
+        return df
+
+    try:
+        hero_df = load_hero_data(HERO_CSV_URL)
+
+        # Assign quarter label
+        hero_df['Quarter'] = hero_df['Month-Year'].dt.to_period('Q').astype(str)
+
+        # Aggregate per customer per quarter
+        agg_hero = (
+            hero_df.groupby(['Quarter', 'Customer'])
+            .agg({'Enquiry Count': 'sum', 'Orders Count': 'sum'})
+            .reset_index()
+        )
+        agg_hero['Win Rate'] = agg_hero['Orders Count'] / agg_hero['Enquiry Count']
+
+        # Apply Hero condition
+        hero_filter = (agg_hero['Enquiry Count'] >= 15) & (agg_hero['Win Rate'] >= 0.15)
+        heroes = agg_hero[hero_filter]
+
+        # Format output
+        quarter_heroes = heroes.groupby('Quarter')['Customer'].apply(lambda x: ', '.join(sorted(x.unique()))).reset_index()
+        for _, row in quarter_heroes.iterrows():
+            st.markdown(f"**{row['Quarter']}**: {row['Customer']}")
+
+    except Exception as e:
+        st.warning("Could not load Hero Customers data. Please check the Google Sheet link.")
+        st.error(str(e))
 
     # --- Treemap with Drill-down ---
     st.subheader("📘 Category-wise & Manager-wise Breakdown (Treemap)")
@@ -185,16 +203,13 @@ if page == "📊 Orders":
         labels=dict(x="Month-Year", y="Deal Manager", color="Achieved Orders"),
         color_continuous_scale='Turbo',
         aspect="auto",
-        text_auto=".2f"  # ✅ Correct way to show two decimal places
+        text_auto=".2f"
     )
 
     fig_heatmap.update_layout(
-        #title='Achieved Orders by Manager & Month (with Averages)',
         xaxis_side="top"
     )
     st.plotly_chart(fig_heatmap, use_container_width=True)
-
-    #st.info("🖱️ Click a heatmap cell to drill down — full interactivity can be added via `plotly_click` callbacks.")
 
     # --- Map ---
     st.subheader("🗺️ Region-wise Achieved Orders")
