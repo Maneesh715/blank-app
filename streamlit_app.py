@@ -145,7 +145,7 @@ if page == "📊 Orders":
         agg_hero['Win Rate'] = agg_hero['Orders Count'] / agg_hero['Enquiry Count']
 
         # Apply Hero condition
-        hero_filter = (agg_hero['Enquiry Count'] >= 15) & (agg_hero['Win Rate'] >= 0.15)
+        hero_filter = (agg_hero['Enquiry Count'] >= 10) & (agg_hero['Win Rate'] >= 0.05)
         heroes = agg_hero[hero_filter]
 
         # Format output
