@@ -655,7 +655,10 @@ else:
         name="Achieved GM (%)",
         marker_color='green',
         yaxis="y",
-        hovertemplate="Month: %{x}<br>Achieved GM: %{y:.1f}%"
+        hovertemplate="Month: %{x}<br>Achieved GM: %{y:.1f}%",
+        text=[f"{val:.2f}%" for val in monthly["Achieved Gross Margin (%)"]],
+        textposition="outside",  # puts text on top of the bar
+        texttemplate="%{text}"
     ))
 
     # Achieved Gross Margin in USD (Line Plot, right axis)
