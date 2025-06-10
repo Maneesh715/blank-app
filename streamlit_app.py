@@ -699,11 +699,17 @@ else:
         filtered_df = filtered_df.copy()
         filtered_df['Achieved Revenue'] = filtered_df['Achieved Revenue'].replace(0, np.nan)
         filtered_df['Achieved Gross Margin (%)'] = (
-            (filtered_df['Achieved Revenue'] - (filtered_df['Achieved COGS'] + filtered_df['Achieved Logistics'] + filtered_df['Achieved P&F'] + filtered_df['Achieved Associate Payment'])) / filtered_df['Achieved Revenue']
+            (filtered_df['Achieved Revenue'] - (
+                filtered_df['Achieved COGS'] + 
+                filtered_df['Achieved Logistics'] + 
+                filtered_df['Achieved P&F'] + 
+                filtered_df['Achieved Associate Payment']
+            )) / filtered_df['Achieved Revenue']
         ) * 100
 
-    # ✅ Step 2: Fill missing/NaN values to ensure all nodes are included
+    # ✅ Step 2: Fill missing values in metric and dimension columns
     filtered_df['Achieved Gross Margin (%)'] = filtered_df['Achieved Gross Margin (%)'].fillna(0)
+    filtered_df[['Deal Manager', 'Plant Type', 'Customer']] = filtered_df[['Deal Manager', 'Plant Type', 'Customer']].fillna('Unknown')
 
     # ✅ Step 3: Replace zeros with a small positive value to make them visible in the treemap
     filtered_df['Achieved Gross Margin Display'] = filtered_df['Achieved Gross Margin (%)'].apply(lambda x: x if x > 0 else 0.01)
@@ -729,6 +735,7 @@ else:
 
     # ✅ Step 6: Display in Streamlit
     st.plotly_chart(fig_treemap, use_container_width=True)
+
 
     # ------------------ HEATMAP: Manager x Month ------------------
     st.subheader("🔥 Achieved Gross Margin (%) Heatmap (Manager × Month)")
