@@ -81,7 +81,7 @@ if page == "📊 Orders":
         if nonzero_achieved_count > 0 else 0
     )
 
-    col1, col2, col3, col4, col5 = st.columns(5)
+    col1, col2, col4, col5 = st.columns(4)
     col1.metric("📌 Total Committed Orders", f"$ {total_committed / 1_000_000:.2f} Mn")
     col2.metric("✅ Total Achieved Orders", f"${total_achieved:,.0f}")
     col4.metric("🆕 New Customers", f"{new_customers}")
@@ -332,7 +332,7 @@ elif page == "📊 Revenue":
     #st.metric("New Customers", new_customers)
     #st.metric("Average Revenue Size", f"${average_revenue_size:,.2f}")
 
-    col1, col2, col3, col4, col5 = st.columns(5)
+    col2, col4, col5 = st.columns(3)
     #col1.metric("📌 Total Committed Revenue", f"${total_committed:,.0f}")
     col2.metric("✅ Total Achieved Revenue", f"${total_achieved:,.0f}")
     #col3.metric("🎯 Conversion Rate", f"{conversion_rate:.2f}%")
