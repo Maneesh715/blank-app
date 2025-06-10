@@ -280,7 +280,7 @@ elif page == "📊 Revenue":
 
     # Convert columns to appropriate types
     df["New Customer"] = df["New Customer"].fillna(0).astype(int)
-    df["Committed Revenue"] = pd.to_numeric(df["Committed Revenue"], errors='coerce').fillna(0)
+    #df["Committed Revenue"] = pd.to_numeric(df["Committed Revenue"], errors='coerce').fillna(0)
     df["Achieved Revenue"] = pd.to_numeric(df["Achieved Revenue"], errors='coerce').fillna(0)
 
     # Sidebar filters
@@ -315,7 +315,7 @@ elif page == "📊 Revenue":
         filtered_df = filtered_df[filtered_df["Customer"].isin(customers)]
 
     # Calculate metrics
-    total_committed = filtered_df["Committed Revenue"].sum()
+    #total_committed = filtered_df["Committed Revenue"].sum()
     total_achieved = filtered_df["Achieved Revenue"].sum()
     new_customers = filtered_df["New Customer"].sum()
     achieved_nonzero_df = filtered_df[filtered_df["Achieved Revenue"] > 0]
@@ -333,7 +333,7 @@ elif page == "📊 Revenue":
     #st.metric("Average Revenue Size", f"${average_revenue_size:,.2f}")
 
     col1, col2, col3, col4, col5 = st.columns(5)
-    col1.metric("📌 Total Committed Revenue", f"${total_committed:,.0f}")
+    #col1.metric("📌 Total Committed Revenue", f"${total_committed:,.0f}")
     col2.metric("✅ Total Achieved Revenue", f"${total_achieved:,.0f}")
     #col3.metric("🎯 Conversion Rate", f"{conversion_rate:.2f}%")
     col4.metric("🆕 New Customers", f"{new_customers}")
@@ -341,7 +341,7 @@ elif page == "📊 Revenue":
 
     # --- Monthly Revenue Comparison ---
     monthly_summary = (
-        filtered_df.groupby(filtered_df["Month-Year"].dt.to_period("M"))[["Committed Revenue", "Achieved Revenue"]]
+        filtered_df.groupby(filtered_df["Month-Year"].dt.to_period("M"))[["Achieved Revenue"]]
         .sum()
         .reset_index()
     )
@@ -352,9 +352,9 @@ elif page == "📊 Revenue":
     #)
 
     fig_revenue = make_subplots(specs=[[{"secondary_y": True}]])
-    fig_revenue.add_trace(go.Bar(x=monthly_summary["Month-Year"], y=monthly_summary["Committed Revenue"],
-                                name="Committed Revenue", marker_color="#66c2a5", text=monthly_summary["Committed Revenue"], textposition='outside'),
-                         secondary_y=False)
+    #fig_revenue.add_trace(go.Bar(x=monthly_summary["Month-Year"], y=monthly_summary["Committed Revenue"],
+                                #name="Committed Revenue", marker_color="#66c2a5", text=monthly_summary["Committed Revenue"], textposition='outside'),
+                         #secondary_y=False)
     fig_revenue.add_trace(go.Bar(x=monthly_summary["Month-Year"], y=monthly_summary["Achieved Revenue"],
                                 name="Achieved Revenue", marker_color="#1d3557", text=monthly_summary["Achieved Revenue"], textposition='outside'),
                          secondary_y=False)
