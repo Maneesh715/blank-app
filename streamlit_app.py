@@ -514,9 +514,9 @@ else:
     # Preprocessing
     usd_conversion = 86
     value_cols_inr = [
-        "Committed COGS", "Achieved COGS", "Committed Logistics", "Achieved Logistics",
-        "Committed P&F", "Achieved P&F", "Committed Associate Payment", "Achieved Associate Payment",
-        "Committed Revenue", "Achieved Revenue"
+        "Booked COGS", "Realized COGS", "Booked Logistics", "Realized Logistics",
+        "Booked P&F", "Realized P&F", "Booked Associate Payment", "Realized Associate Payment",
+        "Booked Revenue", "Realized Revenue"
     ]
 
     for col in value_cols_inr:
