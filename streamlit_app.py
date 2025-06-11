@@ -37,8 +37,8 @@ if page == "📊 Orders":
     
     # Convert columns to appropriate types
     df["New Customer"] = df["New Customer"].fillna(0).astype(int)
-    df["Committed Orders"] = pd.to_numeric(df["Committed Orders"], errors='coerce').fillna(0)
-    df["Achieved Orders"] = pd.to_numeric(df["Achieved Orders"], errors='coerce').fillna(0)
+    df["Committed Order Booking"] = pd.to_numeric(df["Committed Order Booking"], errors='coerce').fillna(0)
+    df["Achieved Order Booking"] = pd.to_numeric(df["Achieved Order Booking"], errors='coerce').fillna(0)
 
     st.sidebar.header("🔎 Filters")
 
@@ -71,36 +71,36 @@ if page == "📊 Orders":
         filtered_df = filtered_df[filtered_df["Customer"].isin(customers)]
 
     # Calculate metrics
-    total_committed = filtered_df["Committed Orders"].sum()
-    total_achieved = filtered_df["Achieved Orders"].sum()
+    total_committed = filtered_df["Committed Order Booking"].sum()
+    total_achieved = filtered_df["Achieved Order Booking"].sum()
     new_customers = filtered_df["New Customer"].sum()
-    achieved_nonzero_df = filtered_df[filtered_df["Achieved Orders"] > 0]
+    achieved_nonzero_df = filtered_df[filtered_df["Achieved Order Booking"] > 0]
     nonzero_achieved_count = len(achieved_nonzero_df)
     average_order_size = (
-        achieved_nonzero_df["Achieved Orders"].sum() / nonzero_achieved_count
+        achieved_nonzero_df["Achieved Order Booking"].sum() / nonzero_achieved_count
         if nonzero_achieved_count > 0 else 0
     )
 
     col1, col2, col4, col5 = st.columns(4)
-    col1.metric("📌 Total Committed Orders", f"$ {total_committed / 1_000_000:.2f} Mn")
-    col2.metric("✅ Total Achieved Orders", f"${total_achieved:,.0f}")
+    col1.metric("📌 Committed Order Booking", f"$ {total_committed / 1_000_000:.2f} Mn")
+    col2.metric("✅ Achieved Order Booking", f"${total_achieved:,.0f}")
     col4.metric("🆕 New Customers", f"{new_customers}")
     col5.metric("📦 Avg. Order Size", f"${average_order_size:,.0f}")
 
     # --- Monthly Orders Comparison ---
     monthly_summary = (
-        filtered_df.groupby(filtered_df["Month-Year"].dt.to_period("M"))[["Committed Orders", "Achieved Orders"]]
+        filtered_df.groupby(filtered_df["Month-Year"].dt.to_period("M"))[["Committed Order Booking", "Achieved Order Booking"]]
         .sum()
         .reset_index()
     )
     monthly_summary["Month-Year"] = monthly_summary["Month-Year"].dt.strftime("%b'%y")
 
     fig_orders = make_subplots(specs=[[{"secondary_y": True}]])
-    fig_orders.add_trace(go.Bar(x=monthly_summary["Month-Year"], y=monthly_summary["Committed Orders"],
-                                name="Committed Orders", marker_color="#66c2a5", text=monthly_summary["Committed Orders"], textposition='outside'),
+    fig_orders.add_trace(go.Bar(x=monthly_summary["Month-Year"], y=monthly_summary["Committed Order Booking"],
+                                name="Committed Order Booking", marker_color="#66c2a5", text=monthly_summary["Committed Order Booking"], textposition='outside'),
                          secondary_y=False)
-    fig_orders.add_trace(go.Bar(x=monthly_summary["Month-Year"], y=monthly_summary["Achieved Orders"],
-                                name="Achieved Orders", marker_color="#1d3557", text=monthly_summary["Achieved Orders"], textposition='outside'),
+    fig_orders.add_trace(go.Bar(x=monthly_summary["Month-Year"], y=monthly_summary["Achieved Order Booking"],
+                                name="Achieved Order Booking", marker_color="#1d3557", text=monthly_summary["Achieved Order Booking"], textposition='outside'),
                          secondary_y=False)
 
     fig_orders.update_layout(
@@ -166,10 +166,10 @@ if page == "📊 Orders":
     fig_treemap = px.treemap(
         filtered_df,
         path=['Deal Manager', 'Plant Type', 'Customer'],
-        values='Achieved Orders',
-        color='Achieved Orders',
+        values='Achieved Order Booking',
+        color='Achieved Order Booking',
         color_continuous_scale='Plasma',
-        custom_data=['Deal Manager', 'Plant Type', 'Customer', 'Achieved Orders'],
+        custom_data=['Deal Manager', 'Plant Type', 'Customer', 'Achieved Order Booking'],
         title='Category-wise & Manager-wise Breakdown'
     )
     fig_treemap.update_traces(root_color="lightgrey")
@@ -177,16 +177,16 @@ if page == "📊 Orders":
     st.plotly_chart(fig_treemap, use_container_width=True)
 
     # --- Heatmap with Drill-down ---
-    st.subheader("🔥 Achieved Orders Heatmap (Manager × Month)")
+    st.subheader("🔥 Achieved Order Booking Heatmap (Manager × Month)")
 
     # Convert to datetime for proper chronological sorting
     filtered_df['Month_Year_Date'] = pd.to_datetime(filtered_df['Month-Year'], format='%b %Y')
 
     # Group data
-    heatmap_data = filtered_df.groupby(['Deal Manager', 'Month_Year_Date'])['Achieved Orders'].sum().reset_index()
+    heatmap_data = filtered_df.groupby(['Deal Manager', 'Month_Year_Date'])['Achieved Order Booking'].sum().reset_index()
 
     # Pivot table
-    heatmap_pivot = heatmap_data.pivot(index='Deal Manager', columns='Month_Year_Date', values='Achieved Orders').fillna(0).round(2)
+    heatmap_pivot = heatmap_data.pivot(index='Deal Manager', columns='Month_Year_Date', values='Achieved Order Booking').fillna(0).round(2)
 
     # Sort columns chronologically
     heatmap_pivot = heatmap_pivot.sort_index(axis=1)
@@ -201,7 +201,7 @@ if page == "📊 Orders":
     # Plot
     fig_heatmap = px.imshow(
         heatmap_pivot,
-        labels=dict(x="Month-Year", y="Deal Manager", color="Achieved Orders"),
+        labels=dict(x="Month-Year", y="Deal Manager", color="Achieved Order Booking"),
         color_continuous_scale='Turbo',
         aspect="auto",
         text_auto=".2f"
@@ -213,15 +213,15 @@ if page == "📊 Orders":
     st.plotly_chart(fig_heatmap, use_container_width=True)
 
     # --- Map ---
-    st.subheader("🗺️ Region-wise Achieved Orders")
-    country_data = filtered_df.groupby('Country')['Achieved Orders'].sum().reset_index()
+    st.subheader("🗺️ Region-wise Achieved Order Booking")
+    country_data = filtered_df.groupby('Country')['Achieved Order Booking'].sum().reset_index()
     fig_choropleth = px.choropleth(
         country_data,
         locations='Country',
         locationmode='country names',
-        color='Achieved Orders',
+        color='Achieved Order Booking',
         color_continuous_scale='Plasma',
-        title='Achieved Orders by Country',
+        title='Achieved Order Booking by Country',
         hover_name='Country'
     )
     fig_choropleth.update_geos(showframe=True, showcoastlines=True, projection_type="natural earth")
@@ -334,7 +334,7 @@ elif page == "📊 Revenue":
 
     col2, col4, col5 = st.columns(3)
     #col1.metric("📌 Total Committed Revenue", f"${total_committed:,.0f}")
-    col2.metric("✅ Total Achieved Revenue", f"${total_achieved:,.0f}")
+    col2.metric("✅ Achieved Revenue", f"${total_achieved:,.0f}")
     #col3.metric("🎯 Conversion Rate", f"{conversion_rate:.2f}%")
     col4.metric("🆕 New Customers", f"{new_customers}")
     col5.metric("📦 Avg. Revenue Size", f"${average_revenue_size:,.0f}")
@@ -491,7 +491,7 @@ elif page == "📊 Revenue":
 else:
     # ------------------ SETTINGS ------------------
     #st.set_page_config(page_title="Gross Margin", layout="wide")
-    st.title("📊 Gross Margin")
+    #st.title("📊 Gross Margin")
 
     # ------------------ DATA LOADING ------------------
     import streamlit as st
@@ -523,24 +523,24 @@ else:
         df[col] = pd.to_numeric(df[col], errors='coerce')
         df[col + " (USD)"] = df[col] / usd_conversion
 
-    df["Committed Gross Margin (USD)"] = df["Committed Revenue (USD)"] - (
-        df["Committed COGS (USD)"] + df["Committed Logistics (USD)"] + df["Committed P&F (USD)"] + df["Committed Associate Payment (USD)"])
+    df["Booked Gross Margin (USD)"] = df["Booked Revenue (USD)"] - (
+        df["Booked COGS (USD)"] + df["Booked Logistics (USD)"] + df["Booked P&F (USD)"] + df["Booked Associate Payment (USD)"])
 
-    df["Achieved Gross Margin (USD)"] = df["Achieved Revenue (USD)"] - (
-        df["Achieved COGS (USD)"] + df["Achieved Logistics (USD)"] + df["Achieved P&F (USD)"] + df["Achieved Associate Payment (USD)"])
+    df["Realized Gross Margin (USD)"] = df["Realized Revenue (USD)"] - (
+        df["Realized COGS (USD)"] + df["Realized Logistics (USD)"] + df["Realized P&F (USD)"] + df["Realized Associate Payment (USD)"])
 
-    df["Committed Gross Margin (%)"] = np.where(df["Committed Revenue (USD)"] > 0,
-        (df["Committed Gross Margin (USD)"] / df["Committed Revenue (USD)"]) * 100, np.nan)
-    df["Achieved Gross Margin (%)"] = np.where(df["Achieved Revenue (USD)"] > 0,
-        (df["Achieved Gross Margin (USD)"] / df["Achieved Revenue (USD)"]) * 100, np.nan)
+    df["Booked Gross Margin (%)"] = np.where(df["Booked Revenue (USD)"] > 0,
+        (df["Booked Gross Margin (USD)"] / df["Booked Revenue (USD)"]) * 100, np.nan)
+    df["Realized Gross Margin (%)"] = np.where(df["Realized Revenue (USD)"] > 0,
+        (df["Realized Gross Margin (USD)"] / df["Realized Revenue (USD)"]) * 100, np.nan)
     #df["Margin Realization (%)"] = np.where(df["Committed Gross Margin (USD)"] > 0,
         #(df["Achieved Gross Margin (USD)"] / df["Committed Gross Margin (USD)"]) * 100, np.nan)
 
     # Display KPI cards in 3 columns
-    #col1, col2, col3 = st.columns(3)
+    #col1, col4 = st.columns(2)
 
     #col1.metric("Achieved Gross Margin (USD)", f"${Achieved Gross Margin (USD):.2f}")
-    #col2.metric("Achieved Gross Margin (%)", f"{Achieved Gross Margin (%):.2f}%")
+    #col4.metric("Achieved Gross Margin (%)", f"{Achieved Gross Margin (%):.2f}%")
     #col3.metric("Margin Realization (%)", f"{Margin Realization (%):.2f}%")
 
 
@@ -550,8 +550,8 @@ else:
     df = df.dropna(subset=["Month-Year"])  # Ensure datetime format only
 
     df["New Customer"] = df["New Customer"].fillna(0).astype(int)
-    df["Committed Revenue"] = pd.to_numeric(df["Committed Revenue"], errors='coerce').fillna(0)
-    df["Achieved Revenue"] = pd.to_numeric(df["Achieved Revenue"], errors='coerce').fillna(0)
+    df["Booked Revenue"] = pd.to_numeric(df["Booked Revenue"], errors='coerce').fillna(0)
+    df["Realized Revenue"] = pd.to_numeric(df["Realized Revenue"], errors='coerce').fillna(0)
 
     # Sidebar Filters
     st.sidebar.header("🔎 Filters")
@@ -582,8 +582,8 @@ else:
         filtered_df = filtered_df[filtered_df["Customer"].isin(customers)]
 
     # Calculations
-    total_committed = filtered_df["Committed Revenue"].sum()
-    total_achieved = filtered_df["Achieved Revenue"].sum()
+    total_committed = filtered_df["Booked Revenue"].sum()
+    total_achieved = filtered_df["Realized Revenue"].sum()
     new_customers = filtered_df["New Customer"].sum()
     average_revenue_size = (total_achieved / len(filtered_df)) if len(filtered_df) > 0 else 0
 
@@ -600,16 +600,16 @@ else:
     filtered_df["MonthYearSort"] = pd.to_datetime(filtered_df["Month-Year"], format="%b %Y", errors='coerce')
 
     # Filter out rows with zero Achieved Revenue (USD)
-    filtered_df = filtered_df[filtered_df["Achieved Revenue (USD)"] != 0]
+    filtered_df = filtered_df[filtered_df["Realized Revenue (USD)"] != 0]
 
     # Aggregate
     monthly = (
         filtered_df.groupby("MonthYearSort")
         .agg({
-            "Committed Gross Margin (USD)": "sum",
-            "Achieved Gross Margin (USD)": "sum",
-            "Committed Revenue (USD)": "sum",
-            "Achieved Revenue (USD)": "sum"
+            "Booked Gross Margin (USD)": "sum",
+            "Realized Gross Margin (USD)": "sum",
+            "Booked Revenue (USD)": "sum",
+            "Realized Revenue (USD)": "sum"
         })
         .reset_index()
     )
@@ -617,15 +617,15 @@ else:
     monthly["Month-Year"] = monthly["MonthYearSort"].dt.strftime("%b %Y")
 
     # Calculate %
-    monthly["Committed Gross Margin (%)"] = np.where(
-        monthly["Committed Revenue (USD)"] != 0,
-        (monthly["Committed Gross Margin (USD)"] / monthly["Committed Revenue (USD)"]) * 100,
+    monthly["Booked Gross Margin (%)"] = np.where(
+        monthly["Realized Revenue (USD)"] != 0,
+        (monthly["Booked Gross Margin (USD)"] / monthly["Realized Revenue (USD)"]) * 100,
         0
     )
 
-    monthly["Achieved Gross Margin (%)"] = np.where(
-        monthly["Achieved Revenue (USD)"] != 0,
-        (monthly["Achieved Gross Margin (USD)"] / monthly["Achieved Revenue (USD)"]) * 100,
+    monthly["Realized Gross Margin (%)"] = np.where(
+        monthly["Realized Revenue (USD)"] != 0,
+        (monthly["Realized Gross Margin (USD)"] / monthly["Realized Revenue (USD)"]) * 100,
         0
     )
 
@@ -638,51 +638,51 @@ else:
     # Plot
     fig1 = go.Figure()
 
-    # Committed Gross Margin (%)
+    # Booked Gross Margin (%)
     fig1.add_trace(go.Bar(
         x=monthly["Month-Year"],
-        y=monthly["Committed Gross Margin (%)"],
-        name="Committed GM (%)",
+        y=monthly["Booked Gross Margin (%)"],
+        name="Booked GM (%)",
         marker_color='lightblue',
         yaxis="y",
         hovertemplate="Month: %{x}<br>Committed GM: %{y:.1f}%"
     ))
 
-    # Achieved Gross Margin (%)
+    # Realized Gross Margin (%)
     fig1.add_trace(go.Bar(
         x=monthly["Month-Year"],
-        y=monthly["Achieved Gross Margin (%)"],
-        name="Achieved GM (%)",
+        y=monthly["Realized Gross Margin (%)"],
+        name="Realized GM (%)",
         marker_color='green',
         yaxis="y",
-        hovertemplate="Month: %{x}<br>Achieved GM: %{y:.1f}%",
-        text=[f"{val:.2f}%" for val in monthly["Achieved Gross Margin (%)"]],
+        hovertemplate="Month: %{x}<br>Realized GM: %{y:.1f}%",
+        text=[f"{val:.2f}%" for val in monthly["Realized Gross Margin (%)"]],
         textposition="outside",  # puts text on top of the bar
         texttemplate="%{text}"
     ))
 
-    # Achieved Gross Margin in USD (Line Plot, right axis)
+    # Realized Gross Margin in USD (Line Plot, right axis)
     fig1.add_trace(go.Scatter(
         x=monthly["Month-Year"],
-        y=monthly["Achieved Gross Margin (USD)"],
-        name="Achieved GM (USD)",
+        y=monthly["Realized Gross Margin (USD)"],
+        name="Realized GM (USD)",
         mode="lines+markers",
         yaxis="y2",
         line=dict(color="orange"),
-        hovertemplate="Month: %{x}<br>Achieved GM (USD): $%{y:,.0f}"
+        hovertemplate="Month: %{x}<br>Realized GM (USD): $%{y:,.0f}"
     ))
 
     # Layout
     fig1.update_layout(
-        title="Monthly Gross Margin (%) and Gross Margin (USD)",
+        #title="Monthly Gross Margin (%) and Gross Margin (USD)",
         xaxis_title="Month-Year",
         yaxis=dict(
             title="Gross Margin (%)",
-            range=[0, max(monthly[["Committed Gross Margin (%)", "Achieved Gross Margin (%)"]].max()) + 10],
+            range=[0, max(monthly[["Booked Gross Margin (%)", "Realized Gross Margin (%)"]].max()) + 10],
             showgrid=False
         ),
         yaxis2=dict(
-            title="Achieved GM (USD)",
+            title="Realized GM (USD)",
             overlaying="y",
             side="right",
             showgrid=False
@@ -698,33 +698,33 @@ else:
     st.subheader("📘 Category-wise & Manager-wise Breakdown (Treemap)")
 
     # ✅ Step 1: Ensure Achieved Gross Margin (%) is calculated
-    if 'Achieved Gross Margin (%)' not in filtered_df.columns:
+    if 'Realized Gross Margin (%)' not in filtered_df.columns:
         filtered_df = filtered_df.copy()
-        filtered_df['Achieved Revenue'] = filtered_df['Achieved Revenue'].replace(0, np.nan)
-        filtered_df['Achieved Gross Margin (%)'] = (
-            (filtered_df['Achieved Revenue'] - (
-                filtered_df['Achieved COGS'] + 
-                filtered_df['Achieved Logistics'] + 
-                filtered_df['Achieved P&F'] + 
-                filtered_df['Achieved Associate Payment']
-            )) / filtered_df['Achieved Revenue']
+        filtered_df['Realized Revenue'] = filtered_df['Realized Revenue'].replace(0, np.nan)
+        filtered_df['Realized Gross Margin (%)'] = (
+            (filtered_df['Realized Revenue'] - (
+                filtered_df['Realized COGS'] + 
+                filtered_df['Realized Logistics'] + 
+                filtered_df['Realized P&F'] + 
+                filtered_df['Realized Associate Payment']
+            )) / filtered_df['Realized Revenue']
         ) * 100
 
     # ✅ Step 2: Fill missing values in metric and dimension columns
-    filtered_df['Achieved Gross Margin (%)'] = filtered_df['Achieved Gross Margin (%)'].fillna(0)
+    filtered_df['Realized Gross Margin (%)'] = filtered_df['Realized Gross Margin (%)'].fillna(0)
     filtered_df[['Deal Manager', 'Plant Type', 'Customer']] = filtered_df[['Deal Manager', 'Plant Type', 'Customer']].fillna('Unknown')
 
     # ✅ Step 3: Replace zeros with a small positive value to make them visible in the treemap
-    filtered_df['Achieved Gross Margin Display'] = filtered_df['Achieved Gross Margin (%)'].apply(lambda x: x if x > 0 else 0.01)
+    filtered_df['Realized Gross Margin Display'] = filtered_df['Realized Gross Margin (%)'].apply(lambda x: x if x > 0 else 0.01)
 
     # ✅ Step 4: Create the treemap
     fig_treemap = px.treemap(
         filtered_df,
         path=['Deal Manager', 'Plant Type', 'Customer'],
-        values='Achieved Gross Margin Display',
-        color='Achieved Gross Margin (%)',
+        values='Realized Gross Margin Display',
+        color='Realized Gross Margin (%)',
         color_continuous_scale='Plasma',
-        custom_data=['Deal Manager', 'Plant Type', 'Customer', 'Achieved Gross Margin (%)'],
+        custom_data=['Deal Manager', 'Plant Type', 'Customer', 'Realized Gross Margin (%)'],
         title='Category-wise & Manager-wise Breakdown'
     )
 
@@ -741,10 +741,10 @@ else:
 
 
     # ------------------ HEATMAP: Manager x Month ------------------
-    st.subheader("🔥 Achieved Gross Margin (%) Heatmap (Manager × Month)")
+    st.subheader("🔥 Realized Gross Margin (%) Heatmap (Manager × Month)")
 
     # Step 1: Filter rows where Achieved Revenue is not zero
-    filtered_df = df[df['Achieved Revenue'] != 0].copy()
+    filtered_df = df[df['Realized Revenue'] != 0].copy()
 
     # Step 2: Create 'MonthYearSort' from 'Month-Year' for sorting
     filtered_df['MonthYearSort'] = pd.to_datetime(filtered_df['Month-Year'], format='%b %Y')
@@ -753,23 +753,23 @@ else:
     agg_data = (
         filtered_df.groupby(['Deal Manager', 'MonthYearSort'])
         .agg({
-            'Achieved Revenue': 'sum',
-            'Achieved COGS': 'sum',
-            'Achieved Logistics': 'sum',
-            'Achieved P&F': 'sum',
-            'Achieved Associate Payment': 'sum'
+            'Realized Revenue': 'sum',
+            'Realized COGS': 'sum',
+            'Realized Logistics': 'sum',
+            'Realized P&F': 'sum',
+            'Realized Associate Payment': 'sum'
         })
         .reset_index()
     )
 
     # Step 4: Compute Achieved Gross Margin (%)
-    agg_data['Achieved Gross Margin (%)'] = (
-        (agg_data['Achieved Revenue'] - (
-            agg_data['Achieved COGS'] +
-            agg_data['Achieved Logistics'] +
-            agg_data['Achieved P&F'] +
-            agg_data['Achieved Associate Payment']
-        )) / agg_data['Achieved Revenue']
+    agg_data['Realized Gross Margin (%)'] = (
+        (agg_data['Realized Revenue'] - (
+            agg_data['Realized COGS'] +
+            agg_data['Realized Logistics'] +
+            agg_data['Realized P&F'] +
+            agg_data['Realized Associate Payment']
+        )) / agg_data['Realized Revenue']
     ) * 100
 
     # Step 5: Format 'Month-Year' for display
@@ -777,40 +777,40 @@ else:
 
     # Step 6: Pivot data for Achieved Revenue & Cost Components for correct summation
     pivot_components = agg_data.pivot(index='Deal Manager', columns='Month-Year', values=[
-        'Achieved Revenue', 'Achieved COGS', 'Achieved Logistics', 'Achieved P&F', 'Achieved Associate Payment']
+        'Realized Revenue', 'Realized COGS', 'Realized Logistics', 'Realized P&F', 'Realized Associate Payment']
     )
 
     # Step 7: Recalculate row-wise average gross margin (%) per Deal Manager
     row_avg = (
-        (pivot_components['Achieved Revenue'].sum(axis=1) - (
-            pivot_components['Achieved COGS'].sum(axis=1) +
-            pivot_components['Achieved Logistics'].sum(axis=1) +
-            pivot_components['Achieved P&F'].sum(axis=1) +
-            pivot_components['Achieved Associate Payment'].sum(axis=1)
-        )) / pivot_components['Achieved Revenue'].sum(axis=1)
+        (pivot_components['Realized Revenue'].sum(axis=1) - (
+            pivot_components['Realized COGS'].sum(axis=1) +
+            pivot_components['Realized Logistics'].sum(axis=1) +
+            pivot_components['Realized P&F'].sum(axis=1) +
+            pivot_components['Realized Associate Payment'].sum(axis=1)
+        )) / pivot_components['Realized Revenue'].sum(axis=1)
     ) * 100
     row_avg = row_avg.round(2)
 
     # Step 8: Recalculate column-wise average gross margin (%) per Month-Year
     col_avg = (
-        (pivot_components['Achieved Revenue'].sum(axis=0) - (
-            pivot_components['Achieved COGS'].sum(axis=0) +
-            pivot_components['Achieved Logistics'].sum(axis=0) +
-            pivot_components['Achieved P&F'].sum(axis=0) +
-            pivot_components['Achieved Associate Payment'].sum(axis=0)
-        )) / pivot_components['Achieved Revenue'].sum(axis=0)
+        (pivot_components['Realized Revenue'].sum(axis=0) - (
+            pivot_components['Realized COGS'].sum(axis=0) +
+            pivot_components['Realized Logistics'].sum(axis=0) +
+            pivot_components['Realized P&F'].sum(axis=0) +
+            pivot_components['Realized Associate Payment'].sum(axis=0)
+        )) / pivot_components['Realized Revenue'].sum(axis=0)
     ) * 100
     col_avg = col_avg.round(2)
 
     # Step 9: Create final heatmap data pivot for Achieved Gross Margin (%)
-    heatmap_pivot = agg_data.pivot(index='Deal Manager', columns='Month-Year', values='Achieved Gross Margin (%)').fillna(0).round(2)
+    heatmap_pivot = agg_data.pivot(index='Deal Manager', columns='Month-Year', values='Realized Gross Margin (%)').fillna(0).round(2)
 
     # Step 10: Append 'Average' row and column
     heatmap_pivot['Average'] = row_avg  # row-wise average
     col_avg['Average'] = (  # dummy value for bottom-right corner
-        (row_avg * pivot_components['Achieved Revenue'].sum(axis=1)).sum()
+        (row_avg * pivot_components['Realized Revenue'].sum(axis=1)).sum()
         /
-        pivot_components['Achieved Revenue'].sum().sum()
+        pivot_components['Realized Revenue'].sum().sum()
     )  # full-table weighted average
     heatmap_pivot.loc['Average'] = col_avg.round(2)
 
@@ -825,7 +825,7 @@ else:
     # Step 12: Plot heatmap
     fig_heatmap = px.imshow(
         heatmap_pivot,
-        labels=dict(x="Month-Year", y="Deal Manager", color="Achieved Gross Margin (%)"),
+        labels=dict(x="Month-Year", y="Deal Manager", color="Realized Gross Margin (%)"),
         color_continuous_scale='Turbo',
         aspect="auto",
         text_auto=".2f"
@@ -843,37 +843,37 @@ else:
     import plotly.express as px
     import pandas as pd
 
-    st.subheader("🗺️ Region-wise Achieved Gross Margin (%)")
+    st.subheader("🗺️ Region-wise Realized Gross Margin (%)")
 
-    # Step 1: Calculate Achieved Gross Margin per row
-    filtered_df['Achieved Gross Margin (%)'] = (
-        (filtered_df['Achieved Revenue'] - (
-            filtered_df['Achieved COGS'] +
-            filtered_df['Achieved Logistics'] +
-            filtered_df['Achieved P&F'] +
-            filtered_df['Achieved Associate Payment']
-        )) / filtered_df['Achieved Revenue']
+    # Step 1: Calculate Realized Gross Margin per row
+    filtered_df['Realized Gross Margin (%)'] = (
+        (filtered_df['Realized Revenue'] - (
+            filtered_df['Realized COGS'] +
+            filtered_df['Realized Logistics'] +
+            filtered_df['Realized P&F'] +
+            filtered_df['Realized Associate Payment']
+        )) / filtered_df['Realized Revenue']
     ) * 100
 
     # Step 2: Compute weighted average Gross Margin per country
     # Weighted by Achieved Revenue
     country_data = filtered_df.groupby('Country').apply(
         lambda x: ((
-            x['Achieved Revenue'] - (
-                x['Achieved COGS'] +
-                x['Achieved Logistics'] +
-                x['Achieved P&F'] +
-                x['Achieved Associate Payment']
+            x['Realized Revenue'] - (
+                x['Realized COGS'] +
+                x['Realized Logistics'] +
+                x['Realized P&F'] +
+                x['Realized Associate Payment']
             )
-        ).sum() / x['Achieved Revenue'].sum()) * 100
-    ).reset_index(name='Achieved Gross Margin (%)')
+        ).sum() / x['Realized Revenue'].sum()) * 100
+    ).reset_index(name='Realized Gross Margin (%)')
 
     # Step 3: Create choropleth map
     fig_choropleth = px.choropleth(
         country_data,
         locations='Country',
         locationmode='country names',
-        color='Achieved Gross Margin (%)',
+        color='Realized Gross Margin (%)',
         color_continuous_scale='Plasma',
         hover_name='Country'
     )
@@ -886,7 +886,7 @@ else:
     )
 
     fig_choropleth.update_layout(
-        title_text='Achieved Gross Margin (%) by Country',
+        title_text='Realized Gross Margin (%) by Country',
         margin={"r": 0, "t": 50, "l": 0, "b": 0}
     )
 
