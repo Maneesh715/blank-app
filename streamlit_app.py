@@ -857,16 +857,22 @@ else:
 
     # Step 2: Compute weighted average Gross Margin per country
     # Weighted by Achieved Revenue
-    country_data = filtered_df.groupby('Country').apply(
-        lambda x: ((
-            x['Realized Revenue'] - (
-                x['Realized COGS'] +
-                x['Realized Logistics'] +
-                x['Realized P&F'] +
-                x['Realized Associate Payment']
-            )
-        ).sum() / x['Realized Revenue'].sum()) * 100
-    ).reset_index(name='Realized Gross Margin (%)')
+    country_data = filtered_df.groupby('Country').agg({
+        'Realized Revenue': 'sum',
+        'Realized COGS': 'sum',
+        'Realized Logistics': 'sum',
+        'Realized P&F': 'sum',
+        'Realized Associate Payment': 'sum'
+    }).reset_index()
+
+    country_data['Realized Gross Margin (%)'] = (
+        (country_data['Realized Revenue'] - (
+            country_data['Realized COGS'] +
+            country_data['Realized Logistics'] +
+            country_data['Realized P&F'] +
+            country_data['Realized Associate Payment']
+        )) / country_data['Realized Revenue']
+    ) * 100
 
     # Step 3: Create choropleth map
     fig_choropleth = px.choropleth(
