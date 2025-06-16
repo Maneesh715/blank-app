@@ -744,15 +744,17 @@ else:
 
 
     # ------------------ HEATMAP: Manager x Month ------------------
-    st.subheader("🔥 Realized Gross Margin (%) Heatmap (Manager × Month)")
+    # ------------------ Combined Heatmap: Booked & Realized GM% ------------------
 
-    # Step 1: Filter rows where Achieved Revenue is not zero
-    filtered_df = df[df['Realized Revenue'] != 0].copy()
+    st.subheader("🔥 Combined Gross Margin (%) Heatmap (Manager × Month)")
 
-    # Step 2: Create 'MonthYearSort' from 'Month-Year' for sorting
+    # Filter out rows where revenue is not zero (for both Booked & Realized)
+    filtered_df = df[(df['Realized Revenue'] != 0) & (df['Booked Revenue'] != 0)].copy()
+
+    # Create MonthYearSort for proper sorting
     filtered_df['MonthYearSort'] = pd.to_datetime(filtered_df['Month-Year'], format='%b %Y')
 
-    # Step 3: Aggregate raw financials by Deal Manager and MonthYearSort
+    # Aggregate all raw components per Deal Manager & Month
     agg_data = (
         filtered_df.groupby(['Deal Manager', 'MonthYearSort'])
         .agg({
@@ -760,12 +762,17 @@ else:
             'Realized COGS': 'sum',
             'Realized Logistics': 'sum',
             'Realized P&F': 'sum',
-            'Realized Associate Payment': 'sum'
+            'Realized Associate Payment': 'sum',
+            'Booked Revenue': 'sum',
+            'Booked COGS': 'sum',
+            'Booked Logistics': 'sum',
+            'Booked P&F': 'sum',
+            'Booked Associate Payment': 'sum'
         })
         .reset_index()
     )
 
-    # Step 4: Compute Achieved Gross Margin (%)
+    # Calculate Realized GM%
     agg_data['Realized Gross Margin (%)'] = (
         (agg_data['Realized Revenue'] - (
             agg_data['Realized COGS'] +
@@ -775,16 +782,29 @@ else:
         )) / agg_data['Realized Revenue']
     ) * 100
 
-    # Step 5: Format 'Month-Year' for display
+    # Calculate Booked GM%
+    agg_data['Booked Gross Margin (%)'] = (
+        (agg_data['Booked Revenue'] - (
+            agg_data['Booked COGS'] +
+            agg_data['Booked Logistics'] +
+            agg_data['Booked P&F'] +
+            agg_data['Booked Associate Payment']
+        )) / agg_data['Booked Revenue']
+    ) * 100
+
+    # Create Month-Year display column
     agg_data['Month-Year'] = agg_data['MonthYearSort'].dt.strftime('%b %Y')
 
-    # Step 6: Pivot data for Achieved Revenue & Cost Components for correct summation
+    # ------------------ Pivot data for weighted averaging ------------------
+
+    # Pivot financial components for both Booked and Realized
     pivot_components = agg_data.pivot(index='Deal Manager', columns='Month-Year', values=[
-        'Realized Revenue', 'Realized COGS', 'Realized Logistics', 'Realized P&F', 'Realized Associate Payment']
+        'Realized Revenue', 'Realized COGS', 'Realized Logistics', 'Realized P&F', 'Realized Associate Payment',
+        'Booked Revenue', 'Booked COGS', 'Booked Logistics', 'Booked P&F', 'Booked Associate Payment']
     )
 
-    # Step 7: Recalculate row-wise average gross margin (%) per Deal Manager
-    row_avg = (
+    # Compute weighted row-wise averages
+    realized_row_avg = (
         (pivot_components['Realized Revenue'].sum(axis=1) - (
             pivot_components['Realized COGS'].sum(axis=1) +
             pivot_components['Realized Logistics'].sum(axis=1) +
@@ -792,10 +812,20 @@ else:
             pivot_components['Realized Associate Payment'].sum(axis=1)
         )) / pivot_components['Realized Revenue'].sum(axis=1)
     ) * 100
-    row_avg = row_avg.round(2)
+    realized_row_avg = realized_row_avg.round(2)
 
-    # Step 8: Recalculate column-wise average gross margin (%) per Month-Year
-    col_avg = (
+    booked_row_avg = (
+        (pivot_components['Booked Revenue'].sum(axis=1) - (
+            pivot_components['Booked COGS'].sum(axis=1) +
+            pivot_components['Booked Logistics'].sum(axis=1) +
+            pivot_components['Booked P&F'].sum(axis=1) +
+            pivot_components['Booked Associate Payment'].sum(axis=1)
+        )) / pivot_components['Booked Revenue'].sum(axis=1)
+    ) * 100
+    booked_row_avg = booked_row_avg.round(2)
+
+    # Compute weighted column-wise averages
+    realized_col_avg = (
         (pivot_components['Realized Revenue'].sum(axis=0) - (
             pivot_components['Realized COGS'].sum(axis=0) +
             pivot_components['Realized Logistics'].sum(axis=0) +
@@ -803,43 +833,94 @@ else:
             pivot_components['Realized Associate Payment'].sum(axis=0)
         )) / pivot_components['Realized Revenue'].sum(axis=0)
     ) * 100
-    col_avg = col_avg.round(2)
+    realized_col_avg = realized_col_avg.round(2)
 
-    # Step 9: Create final heatmap data pivot for Achieved Gross Margin (%)
-    heatmap_pivot = agg_data.pivot(index='Deal Manager', columns='Month-Year', values='Realized Gross Margin (%)').fillna(0).round(2)
+    booked_col_avg = (
+        (pivot_components['Booked Revenue'].sum(axis=0) - (
+            pivot_components['Booked COGS'].sum(axis=0) +
+            pivot_components['Booked Logistics'].sum(axis=0) +
+            pivot_components['Booked P&F'].sum(axis=0) +
+            pivot_components['Booked Associate Payment'].sum(axis=0)
+        )) / pivot_components['Booked Revenue'].sum(axis=0)
+    ) * 100
+    booked_col_avg = booked_col_avg.round(2)
 
-    # Step 10: Append 'Average' row and column
-    heatmap_pivot['Average'] = row_avg  # row-wise average
-    col_avg['Average'] = (  # dummy value for bottom-right corner
-        (row_avg * pivot_components['Realized Revenue'].sum(axis=1)).sum()
-        /
-        pivot_components['Realized Revenue'].sum().sum()
-    )  # full-table weighted average
-    heatmap_pivot.loc['Average'] = col_avg.round(2)
+    # ------------------ Build final combined dataframe ------------------
 
-    # Step 11: Sort columns chronologically (including 'Average' last)
+    # Pivot GM% data
+    pivot_realized = agg_data.pivot(index='Deal Manager', columns='Month-Year', values='Realized Gross Margin (%)').round(2)
+    pivot_booked = agg_data.pivot(index='Deal Manager', columns='Month-Year', values='Booked Gross Margin (%)').round(2)
+
+    # Merge both into text format: "B: xx.xx%\nR: xx.xx%"
+    combined_gm = pivot_booked.copy()
+
+    for col in pivot_booked.columns:
+        combined_gm[col] = (
+            "Booked GM: " + pivot_booked[col].round(2).astype(str) + "%\n" +
+            "Realized GM: " + pivot_realized[col].round(2).astype(str) + "%"
+        )
+
+    # Add weighted averages (rows)
+    combined_gm['Average'] = (
+        "Booked GM: " + booked_row_avg.astype(str) + "%\n" +
+        "Realized GM: " + realized_row_avg.astype(str) + "%"
+    )
+
+    # Add weighted averages (columns)
+    combined_avg_col = pd.Series(
+        data = [
+            f"Booked GM: {booked_col_avg[col]:.2f}%\nR: {realized_col_avg[col]:.2f}%"
+            for col in pivot_booked.columns
+        ],
+        index=pivot_booked.columns
+    )
+    combined_avg_col['Average'] = (
+        f"Booked GM: {(booked_row_avg * pivot_components['Booked Revenue'].sum(axis=1)).sum() / pivot_components['Booked Revenue'].sum().sum():.2f}%\n" +
+        f"Realized GM: {(realized_row_avg * pivot_components['Realized Revenue'].sum(axis=1)).sum() / pivot_components['Realized Revenue'].sum().sum():.2f}%"
+    )
+
+    # Append the column averages as last row
+    combined_gm.loc['Average'] = combined_avg_col
+
+    # Sort columns
     sorted_columns = sorted(
-        [col for col in heatmap_pivot.columns if col != 'Average'],
+        [col for col in pivot_booked.columns],
         key=lambda x: pd.to_datetime(x, format='%b %Y')
     )
     sorted_columns.append('Average')
-    heatmap_pivot = heatmap_pivot[sorted_columns]
+    combined_gm = combined_gm[sorted_columns]
 
-    # Step 12: Plot heatmap
-    fig_heatmap = px.imshow(
-        heatmap_pivot,
-        labels=dict(x="Month-Year", y="Deal Manager", color="Realized Gross Margin (%)"),
-        color_continuous_scale='Turbo',
-        aspect="auto",
-        text_auto=".2f"
+    # ------------------ Plotting Heatmap with custom text ------------------
+
+    # Prepare z-values only for color range (let's use Realized GM% as base color)
+    z_vals = pivot_realized.reindex(columns=sorted_columns).copy()
+    z_vals.loc['Average'] = realized_col_avg[sorted_columns[:-1]].tolist() + [
+        (realized_row_avg * pivot_components['Realized Revenue'].sum(axis=1)).sum() / pivot_components['Realized Revenue'].sum().sum()
+    ]
+
+    # Plot heatmap
+    fig = go.Figure(data=go.Heatmap(
+        z=z_vals,
+        x=combined_gm.columns,
+        y=combined_gm.index,
+        text=combined_gm.values,
+        texttemplate="%{text}",
+        colorscale='Turbo',
+        colorbar=dict(title="Realized GM (%)"),
+        zmin=0,
+        zmax=100
+    ))
+
+    fig.update_layout(
+        title="Booked & Realized Gross Margin (%) Heatmap",
+        xaxis_side="top",
+        autosize=False,
+        width=1400,
+        height=800
     )
 
-    fig_heatmap.update_layout(
-        xaxis_side="top"
-    )
+    st.plotly_chart(fig, use_container_width=True)
 
-    # Step 13: Show plot
-    st.plotly_chart(fig_heatmap, use_container_width=True)
 
     # ------------------ REGION-WISE ANALYSIS ------------------
     import streamlit as st
