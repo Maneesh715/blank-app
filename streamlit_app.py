@@ -618,8 +618,8 @@ else:
 
     # Calculate %
     monthly["Booked Gross Margin (%)"] = np.where(
-        monthly["Realized Revenue (USD)"] != 0,
-        (monthly["Booked Gross Margin (USD)"] / monthly["Realized Revenue (USD)"]) * 100,
+        monthly["Booked Revenue (USD)"] != 0,
+        (monthly["Booked Gross Margin (USD)"] / monthly["Booked Revenue (USD)"]) * 100,
         0
     )
 
