@@ -643,9 +643,12 @@ else:
         x=monthly["Month-Year"],
         y=monthly["Booked Gross Margin (%)"],
         name="Booked GM (%)",
-        marker_color='lightblue',
+        marker_color='lightcoral',
         yaxis="y",
-        hovertemplate="Month: %{x}<br>Committed GM: %{y:.1f}%"
+        hovertemplate="Month: %{x}<br>Committed GM: %{y:.1f}%",
+        text=[f"{val:.2f}%" for val in monthly["Booked Gross Margin (%)"]],
+        textposition="outside",  # puts text on top of the bar
+        texttemplate="%{text}"
     ))
 
     # Realized Gross Margin (%)
