@@ -356,7 +356,7 @@ elif page == "📊 Revenue":
                                 #name="Committed Revenue", marker_color="#66c2a5", text=monthly_summary["Committed Revenue"], textposition='outside'),
                          #secondary_y=False)
     fig_revenue.add_trace(go.Bar(x=monthly_summary["Month-Year"], y=monthly_summary["Achieved Revenue"],
-                                name="Achieved Revenue", marker_color="#1d3557", text=monthly_summary["Achieved Revenue"], textposition='outside'),
+                                name="Achieved Revenue", marker_color="#00FA9A", text=monthly_summary["Achieved Revenue"], textposition='outside'),
                          secondary_y=False)
     #fig_revenue.add_trace(go.Scatter(x=monthly_summary["Month-Year"], y=monthly_summary["Conversion Rate (%)"],
                                     #name="Conversion Rate (%)", mode='lines+markers', line=dict(color="#e76f51", width=3), marker=dict(size=6)),
