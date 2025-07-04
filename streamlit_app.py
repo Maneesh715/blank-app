@@ -539,9 +539,10 @@ else:
     Display KPI cards in 2 columns
     col1, col4 = st.columns(2)
 
-    col1.metric("Achieved Gross Margin (USD)", f"${Achieved Gross Margin (USD):.2f}")
-    col4.metric("Achieved Gross Margin (%)", f"{Achieved Gross Margin (%):.2f}%")
+    col1.metric("Realized Gross Margin (USD)", f"${df['Realized Gross Margin (USD)'].sum():,.2f}")
+    col4.metric("Realized Gross Margin (%)", f"{df['Realized Gross Margin (%)'].mean():.2f}%")
     #col3.metric("Margin Realization (%)", f"{Margin Realization (%):.2f}%")
+    
 
 
     # ------------------ SIDEBAR FILTERS ------------------
