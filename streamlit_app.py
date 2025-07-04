@@ -536,11 +536,11 @@ else:
     #df["Margin Realization (%)"] = np.where(df["Committed Gross Margin (USD)"] > 0,
         #(df["Achieved Gross Margin (USD)"] / df["Committed Gross Margin (USD)"]) * 100, np.nan)
 
-    # Display KPI cards in 3 columns
-    #col1, col4 = st.columns(2)
+    Display KPI cards in 3 columns
+    col1, col4 = st.columns(2)
 
-    #col1.metric("Achieved Gross Margin (USD)", f"${Achieved Gross Margin (USD):.2f}")
-    #col4.metric("Achieved Gross Margin (%)", f"{Achieved Gross Margin (%):.2f}%")
+    col1.metric("Achieved Gross Margin (USD)", f"${Achieved Gross Margin (USD):.2f}")
+    col4.metric("Achieved Gross Margin (%)", f"{Achieved Gross Margin (%):.2f}%")
     #col3.metric("Margin Realization (%)", f"{Margin Realization (%):.2f}%")
 
 
