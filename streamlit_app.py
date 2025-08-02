@@ -547,7 +547,7 @@ else:
 
     # ------------------ SIDEBAR FILTERS ------------------
     # Convert and clean data
-    df["Month-Year"] = pd.to_datetime(df["Month-Year"], format="%b %Y", errors='coerce')
+    df["Month-Year"] = pd.to_datetime(df["Month-Year"], format="mixed", errors='coerce')
     df = df.dropna(subset=["Month-Year"])  # Ensure datetime format only
 
     df["New Customer"] = df["New Customer"].fillna(0).astype(int)
