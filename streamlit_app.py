@@ -537,10 +537,10 @@ else:
         #(df["Achieved Gross Margin (USD)"] / df["Committed Gross Margin (USD)"]) * 100, np.nan)
 
     # Display KPI cards in 2 columns
-    col1, col4 = st.columns(2)
+    #col1, col4 = st.columns(2)
 
-    col1.metric("Realized Gross Margin (USD)", f"${df['Realized Gross Margin (USD)'].sum():,.2f}")
-    col4.metric("Realized Gross Margin (%)", f"{df['Realized Gross Margin (%)'].mean():.2f}%")
+    #col1.metric("Realized Gross Margin (USD)", f"${df['Realized Gross Margin (USD)'].sum():,.2f}")
+    #col4.metric("Realized Gross Margin (%)", f"{df['Realized Gross Margin (%)'].mean():.2f}%")
     # col3.metric("Margin Realization (%)", f"{Margin Realization (%):.2f}%")
 
 
@@ -599,6 +599,21 @@ else:
 
     # Add sorting column
     filtered_df["MonthYearSort"] = pd.to_datetime(filtered_df["Month-Year"], format="%b %Y", errors='coerce')
+
+    # ------------------ KPIs (based on filtered data) ------------------
+    col1, col4 = st.columns(2)
+
+    total_realized_gm_usd = filtered_df["Realized Gross Margin (USD)"].sum()
+    total_realized_revenue_usd = filtered_df["Realized Revenue (USD)"].sum()
+
+    realized_gm_pct = (
+        (total_realized_gm_usd / total_realized_revenue_usd) * 100
+        if total_realized_revenue_usd > 0 else 0.0
+    )
+
+    col1.metric("Realized Gross Margin (USD)", f"${total_realized_gm_usd:,.2f}")
+    col4.metric("Realized Gross Margin (%)", f"{realized_gm_pct:.2f}%")
+
 
     # Filter out rows with zero Achieved Revenue (USD)
     filtered_df = filtered_df[filtered_df["Realized Revenue (USD)"] != 0]
