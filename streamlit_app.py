@@ -83,7 +83,7 @@ if page == "📊 Orders":
 
     col1, col2, col4, col5 = st.columns(4)
     col1.metric("📌 Committed Order Booking", f"$ {total_committed / 1_000_000:.2f} Mn")
-    col2.metric("✅ Achieved Order Booking", f"${total_achieved:,.0f}")
+    col2.metric("✅ Achieved Order Booking", f"${total_achieved / 1_000_000:.2f} Mn")
     col4.metric("🆕 New Customers", f"{new_customers}")
     col5.metric("📦 Avg. Order Size", f"${average_order_size:,.0f}")
 
