@@ -258,69 +258,70 @@ if page == "📊 Orders":
 
     st.plotly_chart(fig_treemap, use_container_width=True)
     
-    # --- Quarterly Heatmap with Drill-down ---
+    # --- Quarterly Heatmap (Stable & Debug-Safe Version) ---
     st.subheader("🔥 Achieved Order Booking Heatmap (Manager × Quarter)")
 
-    # Create Quarter column
-    filtered_df["Quarter"] = filtered_df["Month-Year"].dt.to_period("Q")
+    # Safety copy
+    heatmap_df = filtered_df.copy()
 
-    # Aggregate quarter-wise
+    # Drop rows where Month-Year or Manager missing
+    heatmap_df = heatmap_df.dropna(subset=["Month-Year", "Deal Manager"])
+
+    # Create Quarter column safely
+    heatmap_df["Quarter"] = heatmap_df["Month-Year"].dt.to_period("Q")
+
+    # Aggregate
     heatmap_data = (
-        filtered_df
-        .groupby(["Deal Manager", "Quarter"])["Achieved Order Booking"]
+        heatmap_df
+        .groupby(["Deal Manager", "Quarter"], as_index=False)
+        ["Achieved Order Booking"]
         .sum()
-        .reset_index()
     )
 
-    # Convert Quarter to timestamp for sorting
-    heatmap_data["Quarter"] = heatmap_data["Quarter"].dt.to_timestamp()
+    if heatmap_data.empty:
+        st.warning("No data available for selected filters.")
+    else:
+        # Convert Quarter to timestamp for sorting
+        heatmap_data["Quarter"] = heatmap_data["Quarter"].dt.to_timestamp()
 
-    # Pivot table
-    heatmap_pivot = heatmap_data.pivot(
-        index="Deal Manager",
-        columns="Quarter",
-        values="Achieved Order Booking"
-    ).fillna(0)
+        # Pivot
+        heatmap_pivot = heatmap_data.pivot(
+            index="Deal Manager",
+            columns="Quarter",
+            values="Achieved Order Booking"
+        ).fillna(0)
 
-    # Sort quarters chronologically
-    heatmap_pivot = heatmap_pivot.sort_index(axis=1)
+        # Sort columns chronologically
+        heatmap_pivot = heatmap_pivot.sort_index(axis=1)
 
-    # Convert to Millions for readability
-    heatmap_pivot = heatmap_pivot / 1_000_000
+        # Convert to Millions
+        heatmap_pivot = heatmap_pivot / 1_000_000
 
-    # Add Row Average
-    heatmap_pivot["Average"] = heatmap_pivot.mean(axis=1)
+        # Format quarter labels
+        new_cols = [
+            f"Q{col.quarter}'{col.strftime('%y')}"
+            for col in heatmap_pivot.columns
+        ]
+        heatmap_pivot.columns = new_cols
 
-    # Add Column Average
-    heatmap_pivot.loc["Average"] = heatmap_pivot.mean()
+        # Ensure numeric dtype
+        heatmap_pivot = heatmap_pivot.astype(float)
 
-    # Format column labels as Q1'24
-    formatted_columns = []
-    for col in heatmap_pivot.columns:
-        if isinstance(col, pd.Timestamp):
-            label = "Q" + str(col.quarter) + "'" + col.strftime("%y")
-            formatted_columns.append(label)
-        else:
-            formatted_columns.append(col)
+        # Plot
+        fig_heatmap = px.imshow(
+            heatmap_pivot,
+            labels=dict(x="Quarter", y="Deal Manager", color="Booking (Mn USD)"),
+            color_continuous_scale="Turbo",
+            aspect="auto",
+            text_auto=".2f"
+        )
 
-    heatmap_pivot.columns = formatted_columns
+        fig_heatmap.update_layout(
+            xaxis_side="top",
+            height=600
+        )
 
-    # Plot Heatmap
-    fig_heatmap = px.imshow(
-        heatmap_pivot.round(2),
-        labels=dict(x="Quarter", y="Deal Manager", color="Achieved Booking (Mn USD)"),
-        color_continuous_scale="Turbo",
-        aspect="auto",
-        text_auto=".2f"
-    )
-
-    fig_heatmap.update_layout(
-        xaxis_side="top",
-        height=600,
-        title="📊 Quarterly Achieved Order Booking Heatmap (Mn USD)"
-    )
-
-    st.plotly_chart(fig_heatmap, use_container_width=True)
+        st.plotly_chart(fig_heatmap, use_container_width=True)
     
     # --- Map ---
     st.subheader("🗺️ Region-wise Achieved Order Booking")
