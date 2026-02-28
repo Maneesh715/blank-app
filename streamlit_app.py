@@ -87,7 +87,7 @@ if page == "📊 Orders":
     col4.metric("🆕 New Customers", f"{new_customers}")
     col5.metric("📦 Avg. Order Size", f"${average_order_size:,.0f}")
 
-    # --- Quarterly Orders Comparison ---
+    # --- Quarterly Orders Comparison (Force Vertical Bars) ---
 
     # Aggregate quarter-wise
     quarterly_summary = (
@@ -99,39 +99,39 @@ if page == "📊 Orders":
         .reset_index()
     )
 
-    # Convert period to timestamp for proper ordering
+    # Convert to timestamp for sorting
     quarterly_summary["Quarter"] = quarterly_summary["Month-Year"].dt.to_timestamp()
-
-    # Sort chronologically
     quarterly_summary = quarterly_summary.sort_values("Quarter")
 
-    # Format quarter label (e.g., Q1'24)
+    # Clean quarter label format: Q1'24
     quarterly_summary["Quarter_Label"] = (
-        quarterly_summary["Quarter"].dt.quarter.astype(str)
-        + "Q'"
+        "Q"
+        + quarterly_summary["Quarter"].dt.quarter.astype(str)
+        + "'"
         + quarterly_summary["Quarter"].dt.strftime("%y")
     )
 
-    # Create figure
-    fig_orders = make_subplots(specs=[[{"secondary_y": False}]])
+    fig_orders = go.Figure()
 
+    # --- Committed ---
     fig_orders.add_trace(
         go.Bar(
             x=quarterly_summary["Quarter_Label"],
             y=quarterly_summary["Committed Order Booking"],
             name="Committed Order Booking",
-            marker_color="#66c2a5",
+            orientation="v",   # 🔥 Force vertical
             text=[f"${v/1_000_000:.2f}M" for v in quarterly_summary["Committed Order Booking"]],
             textposition="outside",
         )
     )
 
+    # --- Achieved ---
     fig_orders.add_trace(
         go.Bar(
             x=quarterly_summary["Quarter_Label"],
             y=quarterly_summary["Achieved Order Booking"],
             name="Achieved Order Booking",
-            marker_color="#1d3557",
+            orientation="v",   # 🔥 Force vertical
             text=[f"${v/1_000_000:.2f}M" for v in quarterly_summary["Achieved Order Booking"]],
             textposition="outside",
         )
@@ -139,15 +139,18 @@ if page == "📊 Orders":
 
     fig_orders.update_layout(
         title="📊 Quarterly Orders",
-        xaxis_title="Quarter",
-        yaxis_title="Orders (USD)",
-        legend=dict(orientation="h", y=1.15, x=0.5, xanchor="center"),
+        xaxis=dict(
+            title="Quarter",
+            type="category",     # 🔥 Important
+            tickangle=-30        # Improves readability
+        ),
+        yaxis=dict(
+            title="Orders (USD)"
+        ),
+        barmode="group",         # Side-by-side vertical bars
         template="plotly_white",
-        barmode="group",
-        height=550,
+        height=600
     )
-
-    fig_orders.update_yaxes(title_text="Orders (USD)")
 
     st.plotly_chart(fig_orders, use_container_width=True)
     
