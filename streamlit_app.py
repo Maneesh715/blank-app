@@ -87,32 +87,64 @@ if page == "📊 Orders":
     col4.metric("🆕 New Customers", f"{new_customers}")
     col5.metric("📦 Avg. Order Size", f"${average_order_size:,.0f}")
 
-    # --- Monthly Orders Comparison ---
+    # --- Monthly Orders Comparison (Improved Scalable Version) ---
+
+    # Keep Month-Year as datetime (DO NOT convert to string)
     monthly_summary = (
-        filtered_df.groupby(filtered_df["Month-Year"].dt.to_period("M"))[["Committed Order Booking", "Achieved Order Booking"]]
+        filtered_df
+        .groupby(filtered_df["Month-Year"].dt.to_period("M"))[
+            ["Committed Order Booking", "Achieved Order Booking"]
+        ]
         .sum()
         .reset_index()
     )
-    monthly_summary["Month-Year"] = monthly_summary["Month-Year"].dt.strftime("%b'%y")
 
-    fig_orders = make_subplots(specs=[[{"secondary_y": True}]])
-    fig_orders.add_trace(go.Bar(x=monthly_summary["Month-Year"], y=monthly_summary["Committed Order Booking"],
-                                name="Committed Order Booking", marker_color="#66c2a5", text=monthly_summary["Committed Order Booking"], textposition='outside'),
-                         secondary_y=False)
-    fig_orders.add_trace(go.Bar(x=monthly_summary["Month-Year"], y=monthly_summary["Achieved Order Booking"],
-                                name="Achieved Order Booking", marker_color="#1d3557", text=monthly_summary["Achieved Order Booking"], textposition='outside'),
-                         secondary_y=False)
+    # Convert period back to timestamp for proper datetime axis
+    monthly_summary["Month-Year"] = monthly_summary["Month-Year"].dt.to_timestamp()
+
+    # Sort chronologically
+    monthly_summary = monthly_summary.sort_values("Month-Year")
+
+    # Optional: Show only last 12 months by default
+    if len(monthly_summary) > 12:
+        monthly_summary_display = monthly_summary.tail(12)
+    else:
+        monthly_summary_display = monthly_summary
+
+    fig_orders = make_subplots(specs=[[{"secondary_y": False}]])
+
+    fig_orders.add_trace(
+        go.Bar(
+            x=monthly_summary_display["Month-Year"],
+            y=monthly_summary_display["Committed Order Booking"],
+            name="Committed Order Booking",
+            marker_color="#66c2a5",
+        )
+    )
+
+    fig_orders.add_trace(
+        go.Bar(
+            x=monthly_summary_display["Month-Year"],
+            y=monthly_summary_display["Achieved Order Booking"],
+            name="Achieved Order Booking",
+            marker_color="#1d3557",
+        )
+    )
 
     fig_orders.update_layout(
         title="📊 Monthly Orders",
-        xaxis_title="Month-Year",
+        xaxis=dict(
+            title="Month-Year",
+            type="date",
+            tickformat="%b %Y",
+            rangeslider=dict(visible=True),   # 🔥 Enables scrolling
+        ),
         yaxis_title="Orders (USD)",
         legend=dict(orientation="h", y=1.15, x=0.5, xanchor="center"),
         template="plotly_white",
-        barmode='group',
-        height=500
+        barmode="group",
+        height=500,
     )
-    fig_orders.update_yaxes(title_text="Orders (USD)", secondary_y=False)
 
     st.plotly_chart(fig_orders, use_container_width=True)
 
