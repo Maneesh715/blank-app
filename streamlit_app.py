@@ -195,25 +195,60 @@ if page == "📊 Orders":
         st.warning("Could not load Hero Customers data. Please check the Google Sheet link.")
         st.error(str(e))
 
-    # --- Treemap with Drill-down ---
-    st.subheader("📘 Category-wise & Manager-wise Breakdown (Treemap)")
+    # --- Quarterly Treemap with Drill-down ---
+    st.subheader("📘 Quarterly Category-wise & Manager-wise Breakdown (Treemap)")
 
     # Remove rows with missing hierarchy levels
-    filtered_df = filtered_df.dropna(subset=['Deal Manager', 'Plant Type', 'Customer'])
+    treemap_df = filtered_df.dropna(subset=['Deal Manager', 'Plant Type', 'Customer']).copy()
 
-    fig_treemap = px.treemap(
-        filtered_df,
-        path=['Deal Manager', 'Plant Type', 'Customer'],
-        values='Achieved Order Booking',
-        color='Achieved Order Booking',
-        color_continuous_scale='Plasma',
-        custom_data=['Deal Manager', 'Plant Type', 'Customer', 'Achieved Order Booking'],
-        title='Category-wise & Manager-wise Breakdown'
+    # Create Quarter column
+    treemap_df["Quarter"] = treemap_df["Month-Year"].dt.to_period("Q")
+
+    # Aggregate to reduce box explosion
+    quarterly_treemap = (
+        treemap_df
+        .groupby(["Quarter", "Deal Manager", "Plant Type", "Customer"])["Achieved Order Booking"]
+        .sum()
+        .reset_index()
     )
-    fig_treemap.update_traces(root_color="lightgrey")
+
+    # Convert Quarter to timestamp for ordering
+    quarterly_treemap["Quarter"] = quarterly_treemap["Quarter"].dt.to_timestamp()
+
+    # Sort chronologically
+    quarterly_treemap = quarterly_treemap.sort_values("Quarter")
+
+    # Create clean quarter label
+    quarterly_treemap["Quarter_Label"] = (
+        "Q"
+        + quarterly_treemap["Quarter"].dt.quarter.astype(str)
+        + "'"
+        + quarterly_treemap["Quarter"].dt.strftime("%y")
+    )
+
+    # Create Treemap
+    fig_treemap = px.treemap(
+        quarterly_treemap,
+        path=["Quarter_Label", "Deal Manager", "Plant Type", "Customer"],
+        values="Achieved Order Booking",
+        color="Achieved Order Booking",
+        color_continuous_scale="Plasma",
+        custom_data=["Deal Manager", "Plant Type", "Customer", "Achieved Order Booking"],
+        title="Quarter-wise Category & Manager Breakdown"
+    )
+
+    # Improve hover formatting
+    fig_treemap.update_traces(
+        hovertemplate="<b>%{label}</b><br>Booking: $%{value:,.0f}<extra></extra>",
+        textinfo="label+value"
+    )
+
+    fig_treemap.update_layout(
+        margin=dict(t=50, l=25, r=25, b=25),
+    )
 
     st.plotly_chart(fig_treemap, use_container_width=True)
-
+    
     # --- Heatmap with Drill-down ---
     st.subheader("🔥 Achieved Order Booking Heatmap (Manager × Month)")
 
