@@ -3,5 +3,6 @@ openpyxl
 plotly
 streamlit
 xlsxwriter
+altair==4.2.2
 
 
