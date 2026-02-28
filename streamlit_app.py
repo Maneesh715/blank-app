@@ -195,30 +195,28 @@ if page == "📊 Orders":
         st.warning("Could not load Hero Customers data. Please check the Google Sheet link.")
         st.error(str(e))
 
-    # --- Quarterly Treemap with Drill-down ---
+    # --- Quarterly Treemap with Proper Hover Values ---
     st.subheader("📘 Quarterly Category-wise & Manager-wise Breakdown (Treemap)")
 
-    # Remove rows with missing hierarchy levels
+    # Clean data
     treemap_df = filtered_df.dropna(subset=['Deal Manager', 'Plant Type', 'Customer']).copy()
 
     # Create Quarter column
     treemap_df["Quarter"] = treemap_df["Month-Year"].dt.to_period("Q")
 
-    # Aggregate to reduce box explosion
+    # Aggregate properly
     quarterly_treemap = (
         treemap_df
-        .groupby(["Quarter", "Deal Manager", "Plant Type", "Customer"])["Achieved Order Booking"]
+        .groupby(["Quarter", "Deal Manager", "Plant Type", "Customer"], as_index=False)
+        ["Achieved Order Booking"]
         .sum()
-        .reset_index()
     )
 
-    # Convert Quarter to timestamp for ordering
+    # Convert Quarter for sorting
     quarterly_treemap["Quarter"] = quarterly_treemap["Quarter"].dt.to_timestamp()
-
-    # Sort chronologically
     quarterly_treemap = quarterly_treemap.sort_values("Quarter")
 
-    # Create clean quarter label
+    # Create clean label Q1'24
     quarterly_treemap["Quarter_Label"] = (
         "Q"
         + quarterly_treemap["Quarter"].dt.quarter.astype(str)
@@ -226,24 +224,35 @@ if page == "📊 Orders":
         + quarterly_treemap["Quarter"].dt.strftime("%y")
     )
 
-    # Create Treemap
+    # Build Treemap
     fig_treemap = px.treemap(
         quarterly_treemap,
         path=["Quarter_Label", "Deal Manager", "Plant Type", "Customer"],
         values="Achieved Order Booking",
         color="Achieved Order Booking",
         color_continuous_scale="Plasma",
-        custom_data=["Deal Manager", "Plant Type", "Customer", "Achieved Order Booking"],
-        title="Quarter-wise Category & Manager Breakdown"
+        custom_data=[
+            "Quarter_Label",
+            "Deal Manager",
+            "Plant Type",
+            "Customer",
+            "Achieved Order Booking",
+        ],
     )
 
-    # Improve hover formatting
+    # 🔥 FIX HOVER TEMPLATE PROPERLY
     fig_treemap.update_traces(
-        hovertemplate="<b>%{label}</b><br>Booking: $%{value:,.0f}<extra></extra>",
+        hovertemplate=
+        "<b>Quarter:</b> %{customdata[0]}<br>" +
+        "<b>Manager:</b> %{customdata[1]}<br>" +
+        "<b>Plant:</b> %{customdata[2]}<br>" +
+        "<b>Customer:</b> %{customdata[3]}<br>" +
+        "<b>Achieved Booking:</b> $%{customdata[4]:,.0f}<extra></extra>",
         textinfo="label+value"
     )
 
     fig_treemap.update_layout(
+        title="📊 Quarter-wise Category & Manager Breakdown",
         margin=dict(t=50, l=25, r=25, b=25),
     )
 
